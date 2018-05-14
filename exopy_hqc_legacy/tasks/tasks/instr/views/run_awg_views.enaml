@@ -32,8 +32,24 @@ enamldef RunAWGView(InstrView): view:
 
     constraints = [factory(auto_grid_layout)]
 
+    Label: duty:
+        text = 'AWG event/mode'
+    ObjectCombo: duty_val:
+        items << list(task.get_member('duty').items)
+        selected := task.duty
+ 
     Conditional:
         condition << not in_loop
+        condition << task.duty == 'SET MODE'           
+        Label: awgmode:
+            text = 'AWG mode'
+        ObjectCombo: awgmode_val:
+            items << list(task.get_member('mode').items)
+            selected := task.mode
+
+    Conditional:
+        condition << not in_loop
+        condition << task.duty == 'SET MODE'
         Label:
             text = 'Output'
         QtLineCompleter:
@@ -41,10 +57,3 @@ enamldef RunAWGView(InstrView): view:
             text := task.switch
             entries_updater << task.list_accessible_database_entries
             tool_tip = EVALUATER_TOOLTIP
-            
-    Label: awgmode:
-        text = 'AWG mode'
-    ObjectCombo: awgmode_val:
-        items << list(task.get_member('mode').items)
-        selected := task.mode
-
