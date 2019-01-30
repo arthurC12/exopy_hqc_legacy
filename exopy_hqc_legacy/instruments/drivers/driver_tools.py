@@ -202,11 +202,11 @@ class InstrJob(object):
         while True:
             remaining_time = (timeout -
                               (time.time() - timeout_start))
-            time.sleep(min(refresh_time, remaining_time))
             if self.condition_callable():
                 return True
             if remaining_time < 0 or break_condition_callable():
                 return False
+            time.sleep(min(refresh_time, remaining_time))
 
     def cancel(self, *args, **kwargs):
         """Cancel the long running job.
