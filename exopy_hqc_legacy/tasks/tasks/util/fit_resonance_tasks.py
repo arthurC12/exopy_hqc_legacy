@@ -87,7 +87,7 @@ class FitVNAInterface(TaskInterface):
         array = task.format_and_eval_string(task.target_array)
         if use_ref:
             array_ref = task.format_and_eval_string(task.ref_array)
-
+        
         freq = array[self.column_name_freq]
         data_maglin = array[self.column_name_maglin]
 

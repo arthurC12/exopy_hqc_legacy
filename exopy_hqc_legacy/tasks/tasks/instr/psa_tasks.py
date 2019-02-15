@@ -15,10 +15,7 @@ from inspect import cleandoc
 import numpy as np
 from atom.api import (Unicode, Int, set_default, Enum)
 
-
 from exopy.tasks.api import InstrumentTask, validators
-
-# XXX unfinished
 
 
 class PSAGetTrace(InstrumentTask):

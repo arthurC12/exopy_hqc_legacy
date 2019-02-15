@@ -529,7 +529,7 @@ class SaveFileHDF5Task(SimpleTask):
                                                     ordered_dict_from_pref))
 
     #: Data type (float16, float32, etc.)
-    datatype = Enum('float16', 'float32', 'float64').tag(pref=True)
+    datatype = Enum('int', 'float16', 'float32', 'float64').tag(pref=True)
 
     #: Compression type of the data in the HDF5 file
     compression = Enum('None', 'gzip').tag(pref=True)

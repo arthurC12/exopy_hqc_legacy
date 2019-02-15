@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+#
+# Distributed under the terms of the BSD license.
+#
+# The full license is in the file LICENCE, distributed with this software.
+# -----------------------------------------------------------------------------
+"""Views of the tasks operating on numpy.arrays.
+
+"""
+from enaml.layout.api import grid
+from enaml.widgets.api import (GroupBox, Label, Field, ObjectCombo, Splitter,
+                               SplitItem, Container)
+
+from exopy.utils.widgets.qt_completers import QtLineCompleter
+from exopy.tasks.api import EVALUATER_TOOLTIP, BaseTaskView
+
+enamldef GetCatAngleView(BaseTaskView): view:
+    """Widget for finding the angle of the cat wigner
+
+    """
+
+    constraints << [grid([bit_lab, angle_lab],
+                         [bit_val, angle_val])]
+
+    Label: bit_lab:
+        text = 'Target bit array'
+    QtLineCompleter: bit_val:
+        hug_width = 'ignore'
+        text := task.bit_array
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
+        
+    Label: angle_lab:
+        text = 'Angle array'
+    QtLineCompleter: angle_val:
+        hug_width = 'ignore'
+        text := task.angle_array
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP

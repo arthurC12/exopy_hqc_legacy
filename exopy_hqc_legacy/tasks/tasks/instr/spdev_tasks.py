@@ -171,6 +171,7 @@ class DemodSPTask(InstrumentTask):
         signal for both channels.
 
         """
+#        print('Start spdev')
         if self.driver.owner != self.name:
             self.driver.owner = self.name
             self.driver.configure_board()

@@ -244,6 +244,8 @@ class Alazar935x(DllInstrument):
         # Check card is not saturated
         maxADC = 2**16-100
         minADC = 100
+        print('Max alazar = %d, %d'%(np.amax(data[0]), np.amax(data[1])))
+        print('Min alazar = %d, %d'%(np.amin(data[0]), np.amin(data[1])))
         if any(np.max(data[i]) > maxADC or np.min(data[i]) < minADC for i in
                range(channel_count)):
             mes = '''Channel A or B are saturated: increase input range or

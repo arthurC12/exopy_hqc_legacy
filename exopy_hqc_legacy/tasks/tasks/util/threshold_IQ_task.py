@@ -52,6 +52,7 @@ class ThresholdIQTask(SimpleTask):
     
 
     database_entries = set_default({'I': np.array([1.0]), 'Q': np.array([1.0]),
+                                    'avg_I': np.array([1.0]), 'avg_Q': np.array([1.0]),
                                     'bit': np.array([1.0]), 
                                     'hist':np.array([1.0]), 
                                     'hist_axis': np.array([1.0])})
@@ -64,6 +65,8 @@ class ThresholdIQTask(SimpleTask):
         """
         array_I = self.format_and_eval_string(self.target_array_I)
         array_Q = self.format_and_eval_string(self.target_array_Q)
+        avg_I = array_I.mean(0)
+        avg_Q = array_Q.mean(0)
         thresh = self.format_and_eval_string(self.thresh)
         theta = self.format_and_eval_string(self.theta)
         bin_hist = self.format_and_eval_string(self.bin_hist)
@@ -98,6 +101,8 @@ class ThresholdIQTask(SimpleTask):
         self.write_in_database('hist_axis', hist_axis)
         self.write_in_database('I', array_I)
         self.write_in_database('Q', array_Q)
+        self.write_in_database('avg_I', avg_I)
+        self.write_in_database('avg_Q', avg_Q)
 
     def check(self, *args, **kwargs):
         """ Check the target array can be found and has the right column.

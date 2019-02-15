@@ -72,6 +72,11 @@ SA_AVERAGE = 0x1
 
 NO_ERROR = b'No error'
 
+# video units (not sure that these values are correct)
+SA_LOG_UNITS = 0x0
+SA_VOLT_UNITS = 0x1
+SA_POWER_UNITS = 0x2 
+SA_BYPASS = 0x3
 
 def saGetAPIVersion():
     '''
@@ -166,9 +171,27 @@ def saConfigAcquisition(dev_id, detector=SA_AVERAGE, scale=SA_LOG_SCALE):
     '''
     assert detector == SA_AVERAGE, 'Min/max not implemented.'
 
-    return sa_call(dev_id, 'saConfigAcquisition',
-                   ctypes.c_int32(detector),
-                   ctypes.c_int32(scale))
+    print('****saConfigAcquisition****')
+    err_code = sa_call(dev_id, 'saConfigAcquisition',
+                       ctypes.c_int32(detector),
+                       ctypes.c_int32(scale))
+    print('****saConfigAcquisition done****')
+    return err_code
+
+def saConfigProcUnits(dev_id, units=SA_POWER_UNITS):
+    '''
+    Configures aquisition mode.  We'll almost always use SA_AVERAGE
+    and SA_LOG_SCALE, but you can also obtain min/max data or data in a linear
+    scale.  In SA_LOG_SCALE data is given in nominally calibrated dBm, in
+    SA_LIN_SCALE data is in millivolts.  In the _FULL scales the data are
+    directly from the ADC, which is not terribly useful.
+    '''
+    
+    print('****saConfigProcUnits****')
+    err_code = sa_call(dev_id, 'saConfigProcUnits',
+                       ctypes.c_int32(units))
+    print('****saConfigProcUnits done****')
+    return err_code
 
 
 def saQueryRealTimeFrameInfo(dev_id):
@@ -392,7 +415,7 @@ class SA124B(DllInstrument):
             self.open_connection(serial)
 
     def open_connection(self, serial):
-
+        print('OPEN CONNECTION')
         self.error_list = []
         self.vbw, self.rbw = 250e3, 250e3
 
@@ -542,6 +565,9 @@ class SA124B(DllInstrument):
         return 10*np.log10(np.mean(10**(ys/10)))
 
     def sweep(self):
+        saConfigAcquisition(self._devid,
+                            detector=SA_AVERAGE, scale=SA_LOG_SCALE)
+        saConfigProcUnits(self._devid, units=SA_POWER_UNITS)
         err_code, xs, ys = saGetSweep(self._devid)
         self.error_list.append(err_code)
         return xs, ys
@@ -559,7 +585,7 @@ class SA124B(DllInstrument):
         else:
             return mean_value
 
-
+        
 def test_my_sa():
     serial = saGetSerialNumberList()[0]
     assert serial != 0

@@ -39,7 +39,7 @@ class RunAWGTask(InstrumentTask):
 
         if switch == 'On' or switch == 1:
             print('On')
-            self.driver.send_event() #goes with a 'Event jump to' 1
+#            self.driver.send_event() #goes with a 'Event jump to' 1
 #            print(delay)
             self.driver.run_awg(1, delay=delay) #delay needed when loading
                                                      #large nb of sequences
