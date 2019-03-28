@@ -706,6 +706,9 @@ class SaveArrayTask(SimpleTask):
 
     #: Flag indicating whether to save as csv or .npy.
     mode = Enum('Text file', 'Binary file').tag(pref=True)
+    
+    #: Header to write at the top of the file.
+    delimiter = Unicode(',').tag(pref=True, fmt=True)
 
     wait = set_default({'activated': True})  # Wait on all pools by default.
 
@@ -745,10 +748,10 @@ class SaveArrayTask(SimpleTask):
                     file_object.write(('# ' + line + '\n').encode('utf-8'))
 
             if array_to_save.dtype.names:
-                names = '\t'.join(array_to_save.dtype.names) + '\n'
+                names = (self.delimiter).join(array_to_save.dtype.names) + '\n'
                 file_object.write(names.encode('utf-8'))
 
-            numpy.savetxt(file_object, array_to_save, delimiter='\t')
+            numpy.savetxt(file_object, array_to_save, delimiter=self.format_string(self.delimiter))
             file_object.close()
 
         else:

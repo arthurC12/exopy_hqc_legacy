@@ -234,7 +234,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
 
         last_value = current_value
 
-        if abs(last_value - value) < 1e-12:
+        if abs(last_value - value) < 1e-9:
             self.write_in_database('current', value)
             return
 
@@ -252,7 +252,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
         if abs(value-last_value) > abs(step):
             while not self.root.should_stop.is_set():
                 # Avoid the accumulation of rounding errors
-                last_value = round(last_value + step, 9)
+                last_value = round(last_value + step, 6)
                 setter(last_value)
                 if abs(value-last_value) > abs(step):
                     time.sleep(self.delay)

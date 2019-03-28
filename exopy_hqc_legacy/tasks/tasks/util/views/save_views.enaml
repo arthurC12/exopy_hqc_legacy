@@ -287,8 +287,8 @@ enamldef SaveArrayView(BaseTaskView):
 
     """
     constraints = [vbox(folder, file,
-                        grid([mode_lab, arr_lab],
-                             [mode_val, arr_val]))]
+                        grid([mode_lab, arr_lab, del_lab],
+                             [mode_val, arr_val, del_val]))]
     GroupBox: folder:
 
         title = 'Folder'
@@ -334,6 +334,7 @@ enamldef SaveArrayView(BaseTaskView):
     ObjectCombo: mode_val:
         items = list(task.get_member('mode').items)
         selected := task.mode
+        
     Label: arr_lab:
         text = 'Target array'
     QtLineCompleter: arr_val:
@@ -341,3 +342,8 @@ enamldef SaveArrayView(BaseTaskView):
         text := task.target_array
         entries_updater << task.list_accessible_database_entries
         tool_tip = EVALUATER_TOOLTIP
+        
+    Label: del_lab:
+        text = 'Delimiter'
+    Field: del_val:
+        text := task.delimiter

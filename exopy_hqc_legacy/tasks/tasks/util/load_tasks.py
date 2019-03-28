@@ -24,7 +24,7 @@ def _make_array(names, dtypes='f8', data=None):
 
     dtype = {'names': names, 'formats': dtypes}
     if data is None:
-        data = np.ones((5,))
+        data = 1e-1*np.ones((50,))
     data = data.astype(dtype)
     return data
 
@@ -105,98 +105,9 @@ class CSVLoadInterface(TaskInterface):
 
         data = np.genfromtxt(full_path, comments=self.comments,
                              delimiter=self.delimiter, names=self.names,
-                             skip_header=comment_lines)
+                             skip_header=comment_lines, filling_values='')
 
         task.write_in_database('array', data)
-
-    def check(self, *args, **kwargs):
-        """Try to find the names of the columns to add the array in the
-        database.
-
-        """
-        task = self.task
-        if self.c_names:
-            return True, {}
-
-        try:
-            full_folder_path = task.format_string(task.folder)
-            filename = task.format_string(task.filename)
-        except Exception:
-            return True, {}
-
-        full_path = os.path.join(full_folder_path, filename)
-
-        if os.path.isfile(full_path):
-            with open(full_path) as f:
-                while True:
-                    line = f.readline()
-                    if not line.startswith(self.comments):
-                        names = line.split(self.delimiter)
-                        names = [n.strip() for n in names if n]
-                        self.task.write_in_database('array',
-                                                    _make_array(names))
-                        break
-
-        return True, {}
-
-    def _post_setattr_c_names(self, old, new):
-        """Keep the c_names  in sync with the array in the database.
-
-        """
-        if new:
-            self.task.write_in_database('array', _make_array(new))
-
-
-class DATLoadInterface(TaskInterface):
-    """Interface used to load DAT files.
-
-    """
-    #: Delimiter used in the file to load.
-    delimiter = Unicode('\t').tag(pref=True)
-
-    #: Character used to signal a comment.
-    comments = Unicode('#').tag(pref=True)
-
-    #: Flag indicating whether or not to use the first row as column names.
-    names = Bool(True).tag(pref=True)
-
-    #: The users can provide the names which will be available in its file
-    #: if the file cannot be found when checks are run.
-    c_names = List(Unicode()).tag(pref=True)
-
-    #: Class attr used in the UI.
-    file_formats = ['DAT']
-
-    def perform(self):
-        """Load a file stored in dat format.
-
-        """
-        task = self.task
-        folder = task.format_string(task.folder)
-        filename = task.format_string(task.filename)
-        full_path = os.path.join(folder, filename)
-
-        header_lines = 0
-        with open(full_path) as f:
-            while True:
-                line = f.readline()
-                if f.readline().startswith(self.comments):
-                    header_lines += 1
-                else:
-                    line = line.split(self.delimiter)
-                    try:
-                        float(line[0])
-                        break
-                    except:
-                        names = [n.strip() for n in line if n]
-                        header_lines += 1
-
-        data = np.loadtxt(full_path, comments=self.comments,
-                          delimiter=self.delimiter, skiprows=header_lines)
-
-        data = _make_array(names, data=data)
-
-        task.write_in_database('array', _make_array(names, data=data))
 
     def check(self, *args, **kwargs):
         """Try to find the names of the columns to add the array in the

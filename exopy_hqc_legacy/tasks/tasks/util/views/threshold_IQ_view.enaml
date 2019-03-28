@@ -42,31 +42,41 @@ enamldef ThresholdIQView(BaseTaskView): view:
 
     Label: theta_lab:
         text = 'Theta IQ'
-    Field: theta_val:
+    QtLineCompleter: theta_val:
         hug_width = 'ignore'
         text := task.theta
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
 
     Label: thresh_lab:
         text = 'Threshold'
-    Field: thresh_val:
+    QtLineCompleter: thresh_val:
         hug_width = 'ignore'
         text := task.thresh
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
         
     Label: min_lab:
         text = 'Min histogram'
-    Field: min_val:
+    QtLineCompleter: min_val:
         hug_width = 'ignore'
         text := task.min_hist
-    
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
+        
     Label: max_lab:
         text = 'Max histogram'
-    Field: max_val:
+    QtLineCompleter: max_val:
         hug_width = 'ignore'
         text := task.max_hist
-    
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
+        
     Label: bin_lab:
         text = 'Bins'
-    Field: bin_val:
+    QtLineCompleter: bin_val:
         hug_width = 'ignore'
         text := task.bin_hist
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
 

@@ -160,8 +160,7 @@ class DemodSPTask(InstrumentTask):
             full_path = os.path.join(folder_path, filename)
             
             if not os.path.isfile(full_path):
-                msg = ('File does not exist, be sure that your measure  will '
-                       'create it before this task is executed.')
+                msg = ('File %s does not exist' %filename)
                 traceback[self.get_error_path() + '-file'] = msg
             
         return test, traceback
@@ -196,9 +195,8 @@ class DemodSPTask(InstrumentTask):
             filename = self.format_string(self.file_modeshape)
             full_path = os.path.join(folder_path, filename)
             
-            modeshape_array = np.loadtxt(full_path)
-            _modeshape_real = modeshape_array.T[0]
-            _modeshape_imag = modeshape_array.T[1]
+            modeshape_array = np.load(full_path)
+
 #            print(_modeshape_imag[0])
         def treat_channel_data(index):
             """Treat the data of a channel.
@@ -218,18 +216,10 @@ class DemodSPTask(InstrumentTask):
                 ch = ch.T[:-extra].T
 
             ntraces, nsamples = np.shape(ch)
-#            print('shape =' +str(np.shape(ch)) )
-#            print('ntraces =' +str(ntraces))
-#            print('int(ntraces/num_loop) =' +str(int(ntraces/num_loop)))
-#            print('num_loop =' +str(num_loop))
-#            print('nsamples//(samples_per_period =' +str(nsamples//(samples_per_period)))
-#            print('samples_per_period =' +str(samples_per_period))
-            ch = ch.reshape(int(ntraces/num_loop), num_loop, nsamples//(samples_per_period),
+            len_t = nsamples//(samples_per_period)
+
+            ch = ch.reshape(int(ntraces/num_loop), num_loop, len_t,
                      samples_per_period)
-            
-            if self.use_modeshape:
-                modeshape_real = _modeshape_real[:nsamples//(samples_per_period)]
-                modeshape_imag = _modeshape_imag[:nsamples//(samples_per_period)]
 
             phi = np.linspace(0, 2*np.pi*freq*((samples_per_period-1)*2e-9), samples_per_period)
             cosin = np.cos(phi)
@@ -242,10 +232,6 @@ class DemodSPTask(InstrumentTask):
                 ch_i_t = 2*np.mean(ch_av*cosin, axis=2)
                 ch_q_t = 2*np.mean(ch_av*sinus, axis=2)
 #                print(ch_i_t.shape)
-                if self.use_modeshape:
-                    ch_i_t = ch_i_t*modeshape_real-ch_q_t*modeshape_imag
-                    ch_q_t = ch_q_t*modeshape_real+ch_i_t*modeshape_imag
-#                    print('here lies ch_i_t :' +str(ch_i_t[0]))
 #                print(ch_i_t.shape)
                 ch_i = np.mean(ch_i_t, axis=1)
                 ch_q = np.mean(ch_q_t, axis=1)
@@ -257,9 +243,6 @@ class DemodSPTask(InstrumentTask):
                 ch_i_t = 2*np.mean(ch*cosin, axis=3)
                 ch_q_t = 2*np.mean(ch*sinus, axis=3)
 #                print(ch_i_t.shape)
-                if self.use_modeshape:
-                    ch_i_t = ch_i_t*modeshape_real-ch_q_t*modeshape_imag
-                    ch_q_t = ch_q_t*modeshape_real+ch_i_t*modeshape_imag
 #                    print('here lies ch_i_t :' +str(ch_i_t[0]))
 #                print(ch_i_t.shape)
                 ch_i = np.mean(ch_i_t, axis=2)
@@ -277,13 +260,13 @@ class DemodSPTask(InstrumentTask):
                 ch_av = ch if not avg_aft_demod else np.mean(ch, axis=0)
                 self.write_in_database('Ch%d_trace' % index, ch_av)
 
-            return freq, cosin, sinus, ch_i, ch_q, ch_i_t, ch_q_t
+            return freq, cosin, sinus, len_t, ch_i, ch_q, ch_i_t, ch_q_t
 
         if self.ch1_enabled:
-            freq, cosin, sinus, ch1_i, ch1_q, ch1_i_t, ch1_q_t = treat_channel_data(1)
+            freq, cosin, sinus, len_t, ch1_i, ch1_q, ch1_i_t, ch1_q_t = treat_channel_data(1)
 
         if self.ch2_enabled:
-            _, _, _, ch2_i, ch2_q, ch2_i_t, ch2_q_t  = treat_channel_data(2)
+            _, _, _, _, ch2_i, ch2_q, ch2_i_t, ch2_q_t = treat_channel_data(2)
 
         if self.mode2 == 'Ref':
             ch2_c = ch2_i + 1j*ch2_q
@@ -308,7 +291,7 @@ class DemodSPTask(InstrumentTask):
                 if avg_aft_demod: 
                     chc_i_t_av = np.mean(chc_i_t, axis=0)
                     chc_q_t_av = np.mean(chc_q_t, axis=0)
-                else:  
+                else:
                     chc_i_t_av = chc_i_t
                     chc_q_t_av = chc_q_t
                 
@@ -317,22 +300,51 @@ class DemodSPTask(InstrumentTask):
                 self.write_in_database('Chc_Q_trace', chc_q_t_av)
                 
         if self.mode2 == 'Q':
-            chc_i = ch1_i - ch2_q
-            chc_q = ch1_q + ch2_i
-            chc_i_noise = ch1_i + ch2_q
-            chc_q_noise = -ch1_q + ch2_i
-            # TODO ZL RL: quick fix for single shot data, need to do this
-            # properly chc_i.T[0]
-
-            self.write_in_database('Chc_I', chc_i)
-            self.write_in_database('Chc_Q', chc_q)
-            self.write_in_database('Chc_I_noise', chc_i_noise)
-            self.write_in_database('Chc_Q_noise', chc_q_noise)
             
-            if self.ch1_trace and self.ch2_trace:
+            if self.use_modeshape:
+                if len(modeshape_array)>len_t:
+                    modeshape = modeshape_array[:len_t]
+                    print('Warning: the given modeshape was shortened')
+                elif len(modeshape_array)<len_t:
+                    pad = np.zeros(len_t-len(modeshape_array))
+                    modeshape = np.concatenate((modeshape_array, pad))
+                    print('Warning: the given modeshape was padded with zeros')
+                else:
+                    modeshape = modeshape_array
+#                modeshape = np.ones(len(modeshape))
+#                print(modeshape, len(modeshape))
                 chc_i_t = ch1_i_t - ch2_q_t
                 chc_q_t = ch1_q_t + ch2_i_t
+                
+                chc_c_t = chc_i_t + 1j*chc_q_t
+                chc_c_t = chc_c_t*np.conj(modeshape)
+                chc_c = chc_c_t.mean(2)
+                chc_i = np.real(chc_c)
+                chc_q = np.imag(chc_c)
+                
+                self.write_in_database('Chc_I', chc_i)
+                self.write_in_database('Chc_Q', chc_q)
+                self.write_in_database('Chc_I_noise', chc_i*0) # TODO RL do this properly
+                self.write_in_database('Chc_Q_noise', chc_q*0)
+            else:
+                chc_i = ch1_i - ch2_q
+                chc_q = ch1_q + ch2_i
+                chc_i_noise = ch1_i + ch2_q
+                chc_q_noise = -ch1_q + ch2_i
+                # TODO ZL RL: quick fix for single shot data, need to do this
+                # properly chc_i.T[0]
+    
+                self.write_in_database('Chc_I', chc_i)
+                self.write_in_database('Chc_Q', chc_q)
+                self.write_in_database('Chc_I_noise', chc_i_noise)
+                self.write_in_database('Chc_Q_noise', chc_q_noise)
+                
+                if self.ch1_trace and self.ch2_trace:
+                    chc_i_t = ch1_i_t - ch2_q_t
+                    chc_q_t = ch1_q_t + ch2_i_t                
+                
 
+            if self.ch1_trace and self.ch2_trace:
                 if avg_aft_demod: 
                     chc_i_t_av = np.mean(chc_i_t, axis=0)
                     chc_q_t_av = np.mean(chc_q_t, axis=0)
@@ -342,7 +354,8 @@ class DemodSPTask(InstrumentTask):
                 
 #                print('chc_q_t_av'+str(chc_q_t_av.shape))
                 self.write_in_database('Chc_I_trace', chc_i_t_av)
-                self.write_in_database('Chc_Q_trace', chc_q_t_av)
+                self.write_in_database('Chc_Q_trace', chc_q_t_av)      
+
 
     def _post_setattr_ch1_enabled(self, old, new):
         """Update the database entries based on the enabled channels.
