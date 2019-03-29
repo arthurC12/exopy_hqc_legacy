@@ -240,8 +240,8 @@ enamldef SaveFileHDF5View(BaseTaskView):
 
             title = 'File'
             constraints = [hbox(name, header,
-                                grid([compression_lab, dtype_lab, lines_lab],
-                                     [compression_val, dtype_val, lines_val])),
+                                grid([compression_lab, dtype_lab, lines_lab, shape_lab],
+                                     [compression_val, dtype_val, lines_val, shape_val])),
                             align('v_center', name, header)]
 
             QtLineCompleter: name:
@@ -271,10 +271,21 @@ enamldef SaveFileHDF5View(BaseTaskView):
                 text = 'Approximate number of calls'
             Field: lines_val:
                 text := task.calls_estimation
+                enabled << not task.reshape_loop
                 tool_tip = fill(cleandoc('''Estimate how many times this task will be called
                                             during the measure. An order of magnitude estimate is
                                             enough (one or one thousand ?). This helps h5py
                                             to figure out an appropriate chunk size.'''))
+                
+            CheckBox: shape_lab:
+                text = 'Loops shape'
+                checked := task.reshape_loop
+            QtLineCompleter: shape_val:
+                text := task.shape_loop
+                entries_updater << task.list_accessible_database_entries
+                enabled << task.reshape_loop
+#                tool_tip = ('Tuple which represent the shape of the loops \
+#                             of the measurement \n '+ EVALUATER_TOOLTIP
 
     DictEditor(SavedValueView): ed:
         ed.mapping := task.saved_values

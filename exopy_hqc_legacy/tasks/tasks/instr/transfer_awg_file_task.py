@@ -45,7 +45,7 @@ class TransferAWGFileTask(InstrumentTask):
     parameters = Typed(OrderedDict, ()).tag(pref=[ordered_dict_to_pref,
                                                    ordered_dict_from_pref])
     
-    database_entries = set_default({'num_loop': 1})
+    database_entries = set_default({'shape_loop': 1})
 
     #: wait for trigger before playing each sequence
     wait_trigger = Bool(False).tag(pref=True)
@@ -282,6 +282,7 @@ class TransferAWGFileTask(InstrumentTask):
         n_loops = len(self.parameters)
         
         first_index=1
+        loop_shape = ()
         if n_loops>0:
             for params in self.parameters.items():
                 loop_start = float(self.format_and_eval_string(params[1][0]))
@@ -290,11 +291,12 @@ class TransferAWGFileTask(InstrumentTask):
                 loops.append(np.linspace(loop_start, loop_stop, loop_points))
                 name_parameters.append(params[0])
                 self.write_in_database(params[0]+'_loop', np.linspace(loop_start, loop_stop, loop_points))
-            
+                loop_shape += (loop_points,)
             loop_values = np.moveaxis(np.array(np.meshgrid(*loops)),0,-1).reshape((-1,n_loops))
         else:
             loop_values = [1]
-        self.write_in_database('num_loop', len(loop_values))
+
+        self.write_in_database('shape_loop', loop_shape)
         for nn, loop_value in enumerate(loop_values):
             if n_loops > 0: 
                 for ii, name_parameter in enumerate(name_parameters):

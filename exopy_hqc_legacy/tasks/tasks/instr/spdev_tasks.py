@@ -44,8 +44,8 @@ class DemodSPTask(InstrumentTask):
     # optimal for broadband amplifier, e.g. HEMT alone, or TWPA.
     mode2 = Enum('Indpdt', 'Ref', 'Q').tag(pref=True)
 
-    #: Number of loops in the pulse sequence
-    num_loop = Unicode('1').tag(pref=True, feval=VAL_INT)
+    #: Shape of loops in the pulse sequence
+    shape_loop = Unicode('()').tag(pref=True)
 
     #: Should the acquisition on channel 1 be enabled
     ch1_enabled = Bool(True).tag(pref=True)
@@ -178,7 +178,10 @@ class DemodSPTask(InstrumentTask):
         avg_bef_demod = self.average == 'Avg before demod'
         avg_aft_demod = self.average == 'Avg after demod'
 
-        num_loop = int(self.format_and_eval_string(self.num_loop))
+        shape_loop = self.format_and_eval_string(self.shape_loop)
+        num_loop = 1
+        for shape in shape_loop:
+            num_loop *= shape
         records_number = self.format_and_eval_string(self.records_number)
         records_number *= num_loop
         delay = self.format_and_eval_string(self.delay)*1e-9
@@ -220,6 +223,11 @@ class DemodSPTask(InstrumentTask):
 
             ch = ch.reshape(int(ntraces/num_loop), num_loop, len_t,
                      samples_per_period)
+            ch = np.moveaxis(ch, 0, -1)
+            shape_ch = shape_loop + ch.shape[1:]
+            ch = ch.reshape(shape_ch)
+            # To summarize shape of ch :
+            # shape_loop + (nb_periods, sp_perperiod, avg)
 
             phi = np.linspace(0, 2*np.pi*freq*((samples_per_period-1)*2e-9), samples_per_period)
             cosin = np.cos(phi)
@@ -227,38 +235,34 @@ class DemodSPTask(InstrumentTask):
             # The mean value of cos^2 is 0.5 hence the factor 2 to get the
             # amplitude.
             if avg_bef_demod:
-                ch_av = np.mean(ch, axis=0)
-
-                ch_i_t = 2*np.mean(ch_av*cosin, axis=2)
-                ch_q_t = 2*np.mean(ch_av*sinus, axis=2)
-#                print(ch_i_t.shape)
-#                print(ch_i_t.shape)
-                ch_i = np.mean(ch_i_t, axis=1)
-                ch_q = np.mean(ch_q_t, axis=1)
+                ch = np.mean(ch, axis=-1, keepdims=True)
                 
-                ch_i_av = ch_i
-                ch_q_av = ch_q
+            _ch = np.swapaxes(ch, -2, -1)
+            ch_i_t = 2*np.mean(np.swapaxes(_ch*cosin, -2, -1), axis=-2)
+            ch_q_t = 2*np.mean(np.swapaxes(_ch*sinus, -2, -1), axis=-2)
 
-            else:
-                ch_i_t = 2*np.mean(ch*cosin, axis=3)
-                ch_q_t = 2*np.mean(ch*sinus, axis=3)
-#                print(ch_i_t.shape)
-#                    print('here lies ch_i_t :' +str(ch_i_t[0]))
-#                print(ch_i_t.shape)
-                ch_i = np.mean(ch_i_t, axis=2)
-                ch_q = np.mean(ch_q_t, axis=2)
+            ch_i = np.mean(ch_i_t, axis=-2)
+            ch_q = np.mean(ch_q_t, axis=-2)
+            
+            if avg_aft_demod:
+                ch_i = np.mean(ch_i, axis=-1, keepdims=True)
+                ch_q = np.mean(ch_q, axis=-1, keepdims=True)
                 
-                ch_i_av = ch_i.T[0] if not avg_aft_demod else np.mean(ch_i,
-                                                                      axis=0)
-                ch_q_av = ch_q.T[0] if not avg_aft_demod else np.mean(ch_q,
-                                                                      axis=0)
+                ch_i_t = np.mean(ch_i_t, axis=-1, keepdims=True)
+                ch_q_t = np.mean(ch_q_t, axis=-1, keepdims=True)
 
-            self.write_in_database('Ch%d_I' % index, ch_i_av)
-            self.write_in_database('Ch%d_Q' % index, ch_q_av)
+            self.write_in_database('Ch%d_I' % index, ch_i)
+            self.write_in_database('Ch%d_Q' % index, ch_q)
 
             if getattr(self, 'ch%d_trace' % index):
-                ch_av = ch if not avg_aft_demod else np.mean(ch, axis=0)
-                self.write_in_database('Ch%d_trace' % index, ch_av)
+                if avg_aft_demod: # when we want raw traces there is no demod so
+                                  # we return the avg whatever
+                    ch = np.mean(ch, axis=-1, keepdims=True)
+                # we need to bring back together nb_periods and sp_perperiod
+                    shape_ch = ch.shape
+                    new_shape = shape_ch[:-3] + (shape_ch[-3]*shape_ch[-2], shape_ch[-1])
+                    ch = ch.reshape(new_shape)
+                self.write_in_database('Ch%d_trace' % index, ch)
 
             return freq, cosin, sinus, len_t, ch_i, ch_q, ch_i_t, ch_q_t
 
@@ -275,32 +279,30 @@ class DemodSPTask(InstrumentTask):
             chc_q = np.imag(normed)
             # TODO ZL RL: quick fix for single shot data, need to do this
             # properly chc_i.T[0]
-            chc_i_av = chc_i if not avg_aft_demod else np.mean(chc_i, axis=0)
-            chc_q_av = chc_q if not avg_aft_demod else np.mean(chc_q, axis=0)
-            self.write_in_database('Chc_I', chc_i_av)
-            self.write_in_database('Chc_Q', chc_q_av)
+            if avg_aft_demod:
+                chc_i = np.mean(chc_i, axis=-1, keepdims=True)
+                chc_q = np.mean(chc_q, axis=-1, keepdims=True)
+                
+            self.write_in_database('Chc_I', chc_i)
+            self.write_in_database('Chc_Q', chc_q)
             if self.ch1_trace:
 
                 ch1_c_t = ch1_i_t + 1j*ch1_q_t
-                chc_c_t = np.swapaxes(np.swapaxes(ch1_c_t, 0, 2)/ch2_c.T, 0, 2)
+                chc_c_t = np.swapaxes(np.swapaxes(ch1_c_t, 0, -2)/ch2_c, 0, -2)
                 chc_i_t = np.real(chc_c_t)
                 chc_q_t = np.imag(chc_c_t)
                 
 #                print('after over ch2'+str(chc_q_t.shape))
 
                 if avg_aft_demod: 
-                    chc_i_t_av = np.mean(chc_i_t, axis=0)
-                    chc_q_t_av = np.mean(chc_q_t, axis=0)
-                else:
-                    chc_i_t_av = chc_i_t
-                    chc_q_t_av = chc_q_t
+                    chc_i_t = np.mean(chc_i_t, axis=-1, keepdims=True)
+                    chc_q_t = np.mean(chc_q_t, axis=-1, keepdims=True)
                 
 #                print('chc_q_t_av'+str(chc_q_t_av.shape))
-                self.write_in_database('Chc_I_trace', chc_i_t_av)
-                self.write_in_database('Chc_Q_trace', chc_q_t_av)
+                self.write_in_database('Chc_I_trace', chc_i_t)
+                self.write_in_database('Chc_Q_trace', chc_q_t)
                 
         if self.mode2 == 'Q':
-            
             if self.use_modeshape:
                 if len(modeshape_array)>len_t:
                     modeshape = modeshape_array[:len_t]
@@ -317,8 +319,8 @@ class DemodSPTask(InstrumentTask):
                 chc_q_t = ch1_q_t + ch2_i_t
                 
                 chc_c_t = chc_i_t + 1j*chc_q_t
-                chc_c_t = chc_c_t*np.conj(modeshape)
-                chc_c = chc_c_t.mean(2)
+                chc_c_t = np.swapaxes(np.swapaxes(chc_c_t, -2, -1)*np.conj(modeshape), -2, -1)
+                chc_c = chc_c_t.mean(-2)
                 chc_i = np.real(chc_c)
                 chc_q = np.imag(chc_c)
                 
@@ -346,15 +348,12 @@ class DemodSPTask(InstrumentTask):
 
             if self.ch1_trace and self.ch2_trace:
                 if avg_aft_demod: 
-                    chc_i_t_av = np.mean(chc_i_t, axis=0)
-                    chc_q_t_av = np.mean(chc_q_t, axis=0)
-                else:  
-                    chc_i_t_av = chc_i_t
-                    chc_q_t_av = chc_q_t
+                    chc_i_t = np.mean(chc_i_t, axis=-1, keepdims=True)
+                    chc_q_t = np.mean(chc_q_t, axis=-1, keepdims=True)
                 
 #                print('chc_q_t_av'+str(chc_q_t_av.shape))
-                self.write_in_database('Chc_I_trace', chc_i_t_av)
-                self.write_in_database('Chc_Q_trace', chc_q_t_av)      
+                self.write_in_database('Chc_I_trace', chc_i_t)
+                self.write_in_database('Chc_Q_trace', chc_q_t)      
 
 
     def _post_setattr_ch1_enabled(self, old, new):

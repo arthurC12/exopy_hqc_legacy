@@ -487,11 +487,12 @@ class _HDF5File(h5py.File):
 
     """
 
-    def close(self):
-        for dataset in self.keys():
-            oldshape = self[dataset].shape
-            newshape = (self.attrs['count_calls'], ) + oldshape[1:]
-            self[dataset].resize(newshape)
+    def close(self,):
+        if not self.attrs['reshape_loop']:
+            for dataset in self.keys():
+                oldshape = self[dataset].shape
+                newshape = (self.attrs['count_calls'], ) + oldshape[1:]
+                self[dataset].resize(newshape)
         super(_HDF5File, self).close()
 
     def create_dataset(self, name, shape, maximumshape, datatype, compress):
@@ -537,6 +538,12 @@ class SaveFileHDF5Task(SimpleTask):
     #: Estimation of the number of calls of this task during the measure.
     #: This helps h5py to chunk the file appropriately
     calls_estimation = Unicode('1').tag(pref=True, feval=VAL_REAL)
+    
+    #: Do the data need to be reshape according to user shape
+    reshape_loop = Bool(False).tag(pref=True)
+    
+    #: Wanted shape of the user
+    shape_loop = Unicode('()').tag(pref=True)
 
     #: Flag indicating whether or not initialisation has been performed.
     initialized = Bool(False)
@@ -551,7 +558,14 @@ class SaveFileHDF5Task(SimpleTask):
         """
 
         calls_estimation = self.format_and_eval_string(self.calls_estimation)
-
+        if self.reshape_loop:
+            shape_loop = tuple(self.format_and_eval_string(self.shape_loop))
+            shape_max = shape_loop
+            # if the user gives the shape of the array, we assume it gives the 
+            # correct size, 
+        else:
+            shape_loop = (calls_estimation,)
+            shape_max = (None,)
         # Initialisation.
         if not self.initialized:
 
@@ -570,6 +584,7 @@ class SaveFileHDF5Task(SimpleTask):
             self.root.resources['files'][full_path] = self.file_object
 
             f = self.file_object
+            ordered_keys = []
             for l, v in self.saved_values.items():
                 label = self.format_string(l)
                 self._formatted_labels.append(label)
@@ -579,33 +594,43 @@ class SaveFileHDF5Task(SimpleTask):
                     if names:
                         for m in names:
                             f.create_dataset(label + '_' + m,
-                                             (calls_estimation,) + value.shape,
-                                             (None, ) + value.shape,
+                                             shape_loop + value.shape,
+                                             shape_max + value.shape,
                                              self.datatype,
                                              self.compression)
+                            ordered_keys.append(label+'_'+m)
                     else:
                         f.create_dataset(label,
-                                         (calls_estimation,) + value.shape,
-                                         (None, ) + value.shape,
+                                         shape_loop + value.shape,
+                                         shape_max + value.shape,
                                          self.datatype,
                                          self.compression)
+                        ordered_keys.append(label)
                 else:
-                    f.create_dataset(label, (calls_estimation,), (None,),
+                    f.create_dataset(label, shape_loop, shape_max,
                                      self.datatype, self.compression)
+                    ordered_keys.append(label)
+                    
             f.attrs['header'] = self.format_string(self.header)
             f.attrs['count_calls'] = 0
+            f.attrs['reshape_loop'] = self.reshape_loop
+            f.attrs['ordered_keys'] = str(ordered_keys)
             f.flush()
 
             self.initialized = True
 
         f = self.file_object
         count_calls = f.attrs['count_calls']
-
-        if not (count_calls % calls_estimation):
-            for dataset in f.keys():
-                oldshape = f[dataset].shape
-                newshape = (oldshape[0] + calls_estimation, ) + oldshape[1:]
-                f[dataset].resize(newshape)
+        if not self.reshape_loop:
+            if not (count_calls % calls_estimation):
+                for dataset in f.keys():
+                    oldshape = f[dataset].shape
+                    newshape = (oldshape[0] + calls_estimation, ) + oldshape[1:]
+                    f[dataset].resize(newshape)
+        if self.reshape_loop:
+            index = numpy.unravel_index(count_calls, shape_loop)
+        else:
+            index = count_calls
 
         labels = self._formatted_labels
         for i, v in enumerate(self.saved_values.values()):
@@ -614,11 +639,11 @@ class SaveFileHDF5Task(SimpleTask):
                 names = value.dtype.names
                 if names:
                     for m in names:
-                        f[labels[i] + '_' + m][count_calls] = value[m]
+                        f[labels[i] + '_' + m][index] = value[m]
                 else:
-                    f[labels[i]][count_calls] = value
+                    f[labels[i]][index] = value
             else:
-                f[labels[i]][count_calls] = value
+                f[labels[i]][index] = value
 
         f.attrs['count_calls'] = count_calls + 1
         f.flush()
