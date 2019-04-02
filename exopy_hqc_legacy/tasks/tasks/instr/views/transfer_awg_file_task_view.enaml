@@ -326,7 +326,7 @@ enamldef TransferAWGFileView(InstrTaskView): view:
 
     DictListEditor(LoopEditor): parameter:
         parameter.mapping := task.parameters
-        parameter.operations = ['add','remove']
+        parameter.operations = ['add','remove', 'move']
         parameter.attributes = {'task' : task}
 
     Label: start_event:

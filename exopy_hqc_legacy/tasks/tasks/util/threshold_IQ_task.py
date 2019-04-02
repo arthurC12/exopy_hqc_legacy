@@ -65,8 +65,8 @@ class ThresholdIQTask(SimpleTask):
         """
         array_I = self.format_and_eval_string(self.target_array_I)
         array_Q = self.format_and_eval_string(self.target_array_Q)
-        avg_I = array_I.mean(0)
-        avg_Q = array_Q.mean(0)
+        avg_I = array_I.mean(-1, keepdims=True)
+        avg_Q = array_Q.mean(-1, keepdims=True)
         thresh = self.format_and_eval_string(self.thresh)
         theta = self.format_and_eval_string(self.theta)
         bin_hist = self.format_and_eval_string(self.bin_hist)
@@ -76,21 +76,19 @@ class ThresholdIQTask(SimpleTask):
         # shape[0] = nb of points for statistics, typic. 1000
         # shape[1] = nb of sequences if AWG in sequence mode
         
-        array_I_flat = array_I.flatten()
-        array_Q_flat = array_Q.flatten()
-        array_c = array_I_flat + 1j*array_Q_flat
+        array_c = array_I + 1j*array_Q
                 
 #        theta = IQ_rotate(array_I_flat, array_Q_flat)
         array_c_rot = array_c*np.exp(1j*theta)
         
-        array_I = np.real(array_c_rot).reshape(shape_data)
-        array_Q = np.imag(array_c_rot).reshape(shape_data)
+        array_I = np.real(array_c_rot)
+        array_Q = np.imag(array_c_rot)
         
         array_bit = array_I>thresh
         
         hists = []
-        for seq in range(shape_data[-1]):
-            hist, bin_edges = np.histogram(array_I[:, seq], bins=bin_hist, range=(min_hist, max_hist))
+        for seq in range(shape_data[0]):
+            hist, bin_edges = np.histogram(array_I[seq], bins=bin_hist, range=(min_hist, max_hist))
             hists.append(hist)
             
         hists = np.array(hists).T

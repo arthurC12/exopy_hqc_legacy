@@ -491,8 +491,15 @@ class _HDF5File(h5py.File):
         if not self.attrs['reshape_loop']:
             for dataset in self.keys():
                 oldshape = self[dataset].shape
-                newshape = (self.attrs['count_calls'], ) + oldshape[1:]
-                self[dataset].resize(newshape)
+                if self.attrs['count_calls']>1:
+                    newshape = (self.attrs['count_calls'], ) + oldshape[1:]
+                    self[dataset].resize(newshape)
+                else:
+                    # give up the first dimension when there it's only 1
+                    newshape = oldshape[1:]
+                    data = self[dataset][0]
+                    del self[dataset]
+                    super(_HDF5File, self).create_dataset(dataset, data=data)
         super(_HDF5File, self).close()
 
     def create_dataset(self, name, shape, maximumshape, datatype, compress):
