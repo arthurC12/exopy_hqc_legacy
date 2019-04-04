@@ -280,8 +280,6 @@ class TransferAWGFileTask(InstrumentTask):
         loops = []
         name_parameters = []
         n_loops = len(self.parameters)
-        
-        self.parameters = OrderedDict(reversed(list(self.parameters.items())))
         first_index=1
         loop_shape = ()
         if n_loops>0:
@@ -293,11 +291,9 @@ class TransferAWGFileTask(InstrumentTask):
                 name_parameters.append(params[0])
                 self.write_in_database(params[0]+'_loop', np.linspace(loop_start, loop_stop, loop_points))
                 loop_shape += (loop_points,)
-            loop_values = np.moveaxis(np.array(np.meshgrid(*loops)),0,-1).reshape((-1,n_loops))
+            loop_values = np.array(np.meshgrid(*loops, indexing='ij')).reshape((n_loops,-1)).T
         else:
             loop_values = [1]
-            
-        loop_shape = loop_shape[::-1]
 
         self.write_in_database('shape_loop', loop_shape)
         for nn, loop_value in enumerate(loop_values):
