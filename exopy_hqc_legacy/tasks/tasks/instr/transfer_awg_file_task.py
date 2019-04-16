@@ -84,20 +84,24 @@ class TransferAWGFileTask(InstrumentTask):
             return test, traceback
 
         context = seq.context
-        res, infos, errors = context.compile_and_transfer_sequence(seq)
-
-        if not res:
-            traceback[err_path+'compil'] = errors
-            return False, traceback
-
-        for k, v in infos.items():
-            self.write_in_database(k, v)
-
-        if self.sequence_path:
-            if not (self.sequence_timestamp ==
-                    os.path.getmtime(self.sequence_path)):
-                msg = 'The sequence is outdated, consider refreshing it.'
-                traceback[err_path+'outdated'] = msg
+        compilation = context.compile_loop(seq, 
+                                           for_file = True, 
+                                           factor=False)
+#        print(compilation)
+#        res, byteseq, repeat, infos, errors = compilation
+#
+#        if not res:
+#            traceback[err_path+'compil'] = errors
+#            return False, traceback
+#
+#        for k, v in infos.items():
+#            self.write_in_database(k, v)
+#
+#        if self.sequence_path:
+#            if not (self.sequence_timestamp ==
+#                    os.path.getmtime(self.sequence_path)):
+#                msg = 'The sequence is outdated, consider refreshing it.'
+#                traceback[err_path+'outdated'] = msg
 
         return test, traceback
 

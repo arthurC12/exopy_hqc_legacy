@@ -167,11 +167,11 @@ class AWG5014Context(BaseContext):
             array = array_analog[channel] +\
                 array_M1[channel]*(2**14) + array_M2[channel]*(2**15)
             # Creating and filling a byte array for each channel.
-            aux = np.empty(2*len(array), dtype=np.uint8)
+            aux = np.empty(2*sequence_length, dtype=np.uint8)
             aux[::2] = array % 2**8
             aux[1::2] = array // 2**8
-            to_send[int(channel[-1])] = bytearray(aux)
-            
+            to_send[int(channel[-1])] = to_bytes(aux)
+
         # Build sequence infos
         name = self._cache['sequence_name']
         infos = dict(sampling_frequency=self.sampling_frequency,
@@ -187,6 +187,8 @@ class AWG5014Context(BaseContext):
             return True, infos, traceback
 
         # If we do have a driver proceed to the transfer.
+#<<<<<<< Updated upstream
+#=======
         return self._transfer_sequences(driver, to_send, infos)
 
     def merge_intervals(self, intervals, sequence_length):
@@ -392,11 +394,19 @@ class AWG5014Context(BaseContext):
                 intervals_to_pulses_a[channel][interval][wav_slice] +=\
                     (np.rint(8191*waveform)).astype(np.uint16)
             elif channeltype == 'M1' and pulse.kind == 'Logical':
-                intervals_to_pulses_m1[channel][interval][wav_slice] +=\
-                    waveform
+                # RL modified for marker to be able to superpose
+                np.logical_or(intervals_to_pulses_m1[channel][interval][wav_slice], 
+                              waveform, 
+                              out=intervals_to_pulses_m1[channel][interval][wav_slice])
+#                intervals_to_pulses_m1[channel][interval][wav_slice] +=\
+#                    waveform
             elif channeltype == 'M2' and pulse.kind == 'Logical':
-                intervals_to_pulses_m2[channel][interval][wav_slice] +=\
-                    waveform
+                # RL modified for marker to be able to superpose
+                np.logical_or(intervals_to_pulses_m2[channel][interval][wav_slice], 
+                              waveform, 
+                              out=intervals_to_pulses_m2[channel][interval][wav_slice])
+#                intervals_to_pulses_m2[channel][interval][wav_slice] +=\
+#                    waveform
             else:
                 msg = 'Selected channel does not match kind for pulse {} ({}).'
                 return (False, None, None, dict(),
@@ -473,7 +483,9 @@ class AWG5014Context(BaseContext):
 #        print(len(repeats))
 #        print(repeats[:10])
         return True, wfs, repeats, infos, traceback
-
+#>>>>>>> Stashed changes
+#
+#        return self._transfer_sequences(driver, to_send, infos)
 
     def list_sequence_infos(self):
         """List the sequence infos returned after a successful completion.

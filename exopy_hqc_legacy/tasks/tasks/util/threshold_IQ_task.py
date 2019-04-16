@@ -55,7 +55,8 @@ class ThresholdIQTask(SimpleTask):
                                     'avg_I': np.array([1.0]), 'avg_Q': np.array([1.0]),
                                     'bit': np.array([1.0]), 
                                     'hist':np.array([1.0]), 
-                                    'hist_axis': np.array([1.0])})
+                                    'hist_axis': np.array([1.0]), 
+                                    'avg_bit': np.array([1.0])})
     
     wait = set_default({'activated': True})  # Wait on all pools by default.
 
@@ -85,6 +86,7 @@ class ThresholdIQTask(SimpleTask):
         array_Q = np.imag(array_c_rot)
         
         array_bit = array_I>thresh
+        avg_bit = array_bit.mean(-1)
         
         hists = []
         for seq in range(shape_data[0]):
@@ -101,6 +103,7 @@ class ThresholdIQTask(SimpleTask):
         self.write_in_database('Q', array_Q)
         self.write_in_database('avg_I', avg_I)
         self.write_in_database('avg_Q', avg_Q)
+        self.write_in_database('avg_bit', avg_bit)
 
     def check(self, *args, **kwargs):
         """ Check the target array can be found and has the right column.

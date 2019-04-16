@@ -39,3 +39,35 @@ enamldef GetCatAngleView(BaseTaskView): view:
         text := task.angle_array
         entries_updater << task.list_accessible_database_entries
         tool_tip = EVALUATER_TOOLTIP
+        
+enamldef GetBlobPosView(BaseTaskView): view:
+    """Widget for finding the position of blob in a wigner
+
+    """
+
+    constraints << [grid([bit_lab, I_lab, Q_lab],
+                         [bit_val, I_val, Q_val])]
+
+    Label: bit_lab:
+        text = 'Target bit array'
+    QtLineCompleter: bit_val:
+        hug_width = 'ignore'
+        text := task.bit_array
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
+        
+    Label: I_lab:
+        text = 'I array'
+    QtLineCompleter: I_val:
+        hug_width = 'ignore'
+        text := task.I_array
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
+        
+    Label: Q_lab:
+        text = 'Q array'
+    QtLineCompleter: Q_val:
+        hug_width = 'ignore'
+        text := task.Q_array
+        entries_updater << task.list_accessible_database_entries
+        tool_tip = EVALUATER_TOOLTIP
