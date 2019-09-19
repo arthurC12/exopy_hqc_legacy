@@ -187,8 +187,6 @@ class AWG5014Context(BaseContext):
             return True, infos, traceback
 
         # If we do have a driver proceed to the transfer.
-#<<<<<<< Updated upstream
-#=======
         return self._transfer_sequences(driver, to_send, infos)
 
     def merge_intervals(self, intervals, sequence_length):
@@ -241,7 +239,7 @@ class AWG5014Context(BaseContext):
         items, errors = self.preprocess_sequence(sequence)
 
         if errors:
-            return False, {}, errors
+            return False, 0, 0, {}, errors
 
         duration = max([pulse.stop for pulse in items])
         if sequence.time_constrained:
@@ -483,8 +481,6 @@ class AWG5014Context(BaseContext):
 #        print(len(repeats))
 #        print(repeats[:10])
         return True, wfs, repeats, infos, traceback
-#>>>>>>> Stashed changes
-#
 #        return self._transfer_sequences(driver, to_send, infos)
 
     def list_sequence_infos(self):

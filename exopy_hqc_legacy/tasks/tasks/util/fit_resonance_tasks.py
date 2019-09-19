@@ -90,6 +90,7 @@ class FitVNAInterface(TaskInterface):
         
         freq = array[self.column_name_freq]
         data_maglin = array[self.column_name_maglin]
+#        fig, ax = plt.subplots()
 
         if self.mode == 'Reflection':
             data_phase = array[self.column_name_phase]
@@ -101,12 +102,14 @@ class FitVNAInterface(TaskInterface):
                 freq_ref, data_maglin_ref, data_phase_ref = adapt_ref(freq, freq_ref, data_maglin_ref, data_phase_ref)
                 data_c_ref = data_maglin_ref*np.exp(1j*np.pi/180*data_phase_ref)
                 data_c = data_c/data_c_ref
+#                ax.plot(freq, np.angle(data_c))
 
         if self.mode == 'Lorentzian':
             data_error = array[self.column_name_phase]
         if self.mode == 'Reflection':
             try:
-                val, fit_err = fit_complex_a_out(freq, data_c)
+                popt, fit_err = fit_complex_a_out(freq, data_c)
+                val = popt[0]
             except:
                 val = 1e9
                 fit_err = 100
@@ -123,6 +126,8 @@ class FitVNAInterface(TaskInterface):
             except:
                 val = 1e9
                 fit_err = 100
+#        ax.plot(freq, np.angle(complex_a_out(freq, popt[0], popt[1], popt[2], popt[3]+1j*popt[4], popt[5])))
+#        plt.show()
 
         task.write_in_database('res_value', val)
         print('freq = '+str(np.round(val*1e-9, 5)*1e9) + ', error = '+str(np.round(fit_err, 2)))
@@ -209,7 +214,8 @@ class FitAlazarInterface(TaskInterface):
 
         if self.mode == 'Reflection':
             try:
-                val, fit_err = fit_complex_a_out(freq, data_c)
+                popt, fit_err = fit_complex_a_out(freq, data_c)
+                val = popt[0]
             except:
                 val = 1e9
                 fit_err = 100
@@ -370,8 +376,8 @@ def complex_a_out(f, f_0, kc, ki, a_in, T):  # kc and ki are kappas/2pi
 
 def fit_complex_a_out(f, a_out):
     f_0, kc = get_f0_reflection(f, a_out)
-    kc = 10e6
-    ki = kc
+    kc = 100e6
+    ki = 10e6
     T = 0
 
 #    plt.close('all')
@@ -397,7 +403,7 @@ def fit_complex_a_out(f, a_out):
 #    ax[0].plot(f, np.abs(a_out_fit))
 #    ax[1].plot(f, np.angle(a_out_fit))
 #
-    return popt[0], fit_error
+    return popt, fit_error
 
 
 def get_f0_reflection(f, a_out):

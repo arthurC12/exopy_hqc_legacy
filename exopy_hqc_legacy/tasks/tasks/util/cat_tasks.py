@@ -133,6 +133,8 @@ class GetBlobPos(SimpleTask):
     I_array = Unicode().tag(pref=True)
     Q_array = Unicode().tag(pref=True)
     
+    neg = Bool(False).tag(pref=True)
+    
     database_entries = set_default({'pos1': 1.0, 'pos2':1.0})
     
     wait = set_default({'activated': True})  # Wait on all pools by default.
@@ -144,6 +146,7 @@ class GetBlobPos(SimpleTask):
         bit = self.format_and_eval_string(self.bit_array)
         I = self.format_and_eval_string(self.I_array)
         Q = self.format_and_eval_string(self.Q_array)
+        neg = self.neg
         avg = bit.mean(-1)
         avg = np.transpose(avg, (2,1,0))
         wig = avg[0] - avg[1]
@@ -151,30 +154,65 @@ class GetBlobPos(SimpleTask):
         popt = fit_blob(I, Q, wig, 0.5)
         I_fit, Q_fit = np.meshgrid(I, Q)
         
-        blob1 = popt[4]+1j*popt[6]
-        blob2 = popt[5]+1j*popt[7]
+        blob1 = popt[5]+1j*popt[8]
+        blob2 = popt[6]+1j*popt[9]
+        three=False
+        if three:
+            blob3 = popt[7]+1j*popt[10]
         print('\n')
-        if popt[2]<0 or popt[3]<0:
-            if popt[2]<0:    
-                print('Neg_blob is in (%.3f, %.3f) with height %.3f'%(popt[4], popt[6], popt[2]))
+        if neg:
+            if popt[2]<0:
+                print('Neg_blob')# is in (%.3f, %.3f) with height %.3f'%(popt[5], popt[8], popt[2]))
                 pos1 = blob2
+                height1 = popt[3]
                 pos2 = blob1
-                # first blob should be positive
-            else:    
-                print('\n'+'Neg_blob is in (%.3f, %.3f) with height %.3f'%(popt[5], popt[7],popt[3]))
+                height2 = popt[2]
+            # first blob should be positive
+            elif popt[3]<0:
+                print('Neg_blob')# is in (%.3f, %.3f) with height %.3f'%(popt[6], popt[9],popt[3]))
                 pos1 = blob1
+                height1 = popt[2]
                 pos2 = blob2
+                height2 = popt[3]
         else:
-            if np.abs(blob1)>np.abs(blob2):
-                pos1 = blob2
-                pos2 = blob1
+            if three:
+            # if one blob is near center, should be pos1
+                if np.abs(blob1)<np.abs(blob2) and np.abs(blob1)<np.abs(blob3):
+                    pos1 = blob1
+                    height1 = popt[2]
+                elif np.abs(blob2)<np.abs(blob1) and np.abs(blob2)<np.abs(blob3):
+                    pos1 = blob2
+                    height1 = popt[3]
+                else: 
+                    pos1 = blob3
+                    height1 = popt[4]
             else:
-                pos1 = blob1
-                pos2 = blob2
-                
+                if np.abs(blob1)<np.abs(blob2):
+                    pos1 = blob1
+                    pos2 = blob2
+                    height1 = popt[2]
+                    height2 = popt[3]
+                else: 
+                    pos1 = blob2
+                    pos2 = blob1
+                    height1 = popt[3]
+                    height2 = popt[2]
+                    
+            if three:
+                # if one blob is farthest from center, should be pos2
+                if np.abs(blob1)>np.abs(blob2) and np.abs(blob1)>np.abs(blob3):
+                    pos2 = blob1
+                    height2 = popt[2]
+                elif np.abs(blob2)>np.abs(blob1) and np.abs(blob2)>np.abs(blob3):
+                    pos2 = blob2
+                    height2 = popt[3]
+                else: 
+                    pos2 = blob3
+                    height2 = popt[4]
                 
         print('Blobs are in (%.3f, %.3f), (%.3f, %.3f)'%(np.real(pos1), 
                              np.imag(pos1), np.real(pos2), np.imag(pos2)))
+        print('with heights (%.3f, %.3f)'%(height1, height2))
         
         theta = np.angle(blob1-blob2)
         alpha1 = np.abs(pos1)
@@ -247,10 +285,10 @@ class GetBlobPos(SimpleTask):
 def gauss_pi(x, x0, A, sigma):
     return A*np.exp(-((x-x0)%np.pi)**2/(2*sigma**2))+A*np.exp(-((x-x0)%np.pi+np.pi)**2/(2*sigma**2))+A*np.exp(-((x-x0)%np.pi-np.pi)**2/(2*sigma**2))
    
-def blob(x, y, sigma, A0, A1, A2, x1, x2, y1, y2):
-    A = [A0, A1, A2]
-    x0 = [x1, x2]
-    y0 = [y1, y2]
+def blob(x, y, sigma, A0, A1, A2, A3, x1, x2, x3, y1, y2, y3):
+    A = [A0, A1, A2, A3]
+    x0 = [x1, x2, x3]
+    y0 = [y1, y2, x3]
     z = A[0]
     for ii in range(2):
         z+=A[ii+1]*np.exp(-((x-x0[ii])/sigma)**2/2)*np.exp(-((y-y0[ii])/sigma)**2/2)
@@ -270,7 +308,7 @@ def fit_blob(x, y, z, sigma, debug=False):
         fig, ax = plt.subplots(3,2)
         vmax = np.amax(_z)
         ax[0,0].pcolor(x, y, _z, vmin=[-vmax,vmax], cmap=cmap)
-    for ii in range(2):
+    for ii in range(3):
         index_max = np.unravel_index(np.nanargmax(np.abs(_z)), shape)
         A_guess.append(z[index_max])
         x_guess.append(x[index_max[1]])
@@ -281,7 +319,7 @@ def fit_blob(x, y, z, sigma, debug=False):
             ax[ii+1,0].pcolor(x, y, _z, vmin=[-vmax,vmax], cmap=cmap)
             ax[ii+1,0].pcolor(ax[ii+1,1], x, y, dist_array, vmin=0)
     A_guess = [np.nanmean(_z)]+A_guess
-    popt, pcov = surface_fit(blob, x, y, z, (sigma, A_guess[0], A_guess[1], A_guess[2], x_guess[0], x_guess[1], y_guess[0], y_guess[1]))
+    popt, pcov = surface_fit(blob, x, y, z, (sigma, A_guess[0], A_guess[1], A_guess[2], A_guess[3], x_guess[0], x_guess[1], x_guess[2], y_guess[0], y_guess[1], y_guess[2]))
     return popt
 
 def surface_fit(f, xData, yData, zData, p0, weights=None, bounds=()):

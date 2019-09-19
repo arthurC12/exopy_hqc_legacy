@@ -11,7 +11,7 @@
 """
 from enaml.layout.api import grid
 from enaml.widgets.api import (GroupBox, Label, Field, ObjectCombo, Splitter,
-                               SplitItem, Container)
+                               SplitItem, Container, CheckBox,)
 
 from exopy.utils.widgets.qt_completers import QtLineCompleter
 from exopy.tasks.api import EVALUATER_TOOLTIP, BaseTaskView
@@ -45,8 +45,8 @@ enamldef GetBlobPosView(BaseTaskView): view:
 
     """
 
-    constraints << [grid([bit_lab, I_lab, Q_lab],
-                         [bit_val, I_val, Q_val])]
+    constraints << [grid([bit_lab, I_lab, Q_lab, Neg_lab],
+                         [bit_val, I_val, Q_val, Neg_val])]
 
     Label: bit_lab:
         text = 'Target bit array'
@@ -71,3 +71,8 @@ enamldef GetBlobPosView(BaseTaskView): view:
         text := task.Q_array
         entries_updater << task.list_accessible_database_entries
         tool_tip = EVALUATER_TOOLTIP
+        
+    Label: Neg_lab:
+        text = 'Neg blob'
+    CheckBox: Neg_val:
+        checked := task.neg

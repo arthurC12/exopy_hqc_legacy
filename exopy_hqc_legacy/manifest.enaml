@@ -352,13 +352,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'cat_tasks:GetBlobPos'
                     view = 'views.cat_views:GetBlobPosView'
->>>>>>> Stashed changes
                 Task:
                     task = 'load_tasks:LoadArrayTask'
                     view = 'views.load_views:LoadArrayView'
                     Interface:
                         interface = 'load_tasks:CSVLoadInterface'
                         views = ['views.load_views:CSVLoadInterfaceView']
+                    Interface:
+                        interface = 'load_tasks:BinaryLoadInterface'
+                        views = ['views.load_views:BinaryLoadInterfaceView']
                 Task:
                     task = 'save_tasks:SaveTask'
                     view = 'views.save_views:SaveView'

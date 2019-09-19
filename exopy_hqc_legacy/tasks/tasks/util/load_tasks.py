@@ -145,3 +145,38 @@ class CSVLoadInterface(TaskInterface):
         """
         if new:
             self.task.write_in_database('array', _make_array(new))
+            
+class BinaryLoadInterface(TaskInterface):
+    """Interface used to load .npy files.
+
+    """
+    
+    #: Class attr used in the UI.
+    file_formats = ['NPY']
+
+    def perform(self):
+        """Load a file stored in csv format.
+
+        """
+        task = self.task
+        folder = task.format_string(task.folder)
+        filename = task.format_and_eval_string(task.filename)
+        full_path = os.path.join(folder, filename)
+        data = np.load(full_path)
+        task.write_in_database('array', data)
+
+    def check(self, *args, **kwargs):
+        """Try to find the names of the columns to add the array in the
+        database.
+
+        """
+        task = self.task
+
+        try:
+            full_folder_path = task.format_string(task.folder)
+            filename = task.format_and_eval_string(task.filename)
+        except Exception:
+            return True, {}
+
+        return True, {}
+
