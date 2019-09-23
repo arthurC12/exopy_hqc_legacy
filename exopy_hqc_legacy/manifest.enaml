@@ -291,6 +291,13 @@ enamldef HqcLegacyManifest(PluginManifest):
                         model = 'APSING20G'
                         connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
+                  Drivers:
+                    manufacturer = 'CryoCon'
+                    Driver:
+                        driver = 'cryocon:CryoCon32B'
+                        model = 'CryoCon32B'
+                        connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
             Drivers:
                 path = 'dll'
                 starter = 'exopy_hqc_legacy.starter.dll'
@@ -488,3 +495,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'run_awg:RunAWGTask'
                     view = 'views.run_awg_views:RunAWGView'
                     instruments = ['exopy_hqc_legacy.Legacy.AWG']
+                Task:
+                    task = 'meas_temp_tasks:MeasTempTask'
+                    view = 'views.meas_temp_views:MeasTempView'
+                    instruments = ['exopy_hqc_legacy.Legacy.CryoCon32B']
