@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2019 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
 # The full license is in the file LICENCE, distributed with this software.
 # -----------------------------------------------------------------------------
-"""Task to measure DC properties.
+"""Task to measure temperature.
 
 """
 from time import sleep
@@ -17,7 +17,7 @@ from exopy.tasks.api import InstrumentTask
 
 
 class MeasTempTask(InstrumentTask):
-    """Measure a dc voltage.
+    """Measure a temperature in Kelvin.
 
     Wait for any parallel operation before execution and then wait the
     specified time before perfoming the measure.
@@ -31,7 +31,7 @@ class MeasTempTask(InstrumentTask):
     wait = set_default({'activated': True, 'wait': ['instr']})
 
     def perform(self):
-        """Wait and read the DC voltage.
+        """Wait and read the temperature in Kelvin.
 
         """
         sleep(self.wait_time)

@@ -291,12 +291,13 @@ enamldef HqcLegacyManifest(PluginManifest):
                         model = 'APSING20G'
                         connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
-                  Drivers:
+                Drivers:
                     manufacturer = 'CryoCon'
                     Driver:
                         driver = 'cryocon:CryoCon32B'
                         model = 'CryoCon32B'
-                        connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
+                        connections = {'VisaRS232':
+                                           {'resource_class': 'INSTR'}
                                        }
             Drivers:
                 path = 'dll'

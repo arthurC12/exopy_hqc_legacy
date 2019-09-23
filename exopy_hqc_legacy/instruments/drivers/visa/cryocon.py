@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2019 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -14,7 +14,7 @@ from ..visa_tools import VisaInstrument
 
 
 class CryoCon32B(VisaInstrument):
-    """Driver for a SR7265 lock-in, using the VISA library.
+    """Driver for a CryoCon32B lock-in, using the VISA library.
 
     This driver does not give access to all the functionnality of the
     instrument but you can extend it if needed. See the documentation of the
@@ -26,18 +26,8 @@ class CryoCon32B(VisaInstrument):
 
     Methods
     -------
-    read_x()
-        Return the x quadrature measured by the instrument
-    read_y()
-        Return the y quadrature measured by the instrument
-    read_xy()
-        Return the x and y quadratures measured by the instrument
-    read_amplitude()
-        Return the ammlitude of the signal measured by the instrument
-    read_phase()
-        Return the phase of the signal measured by the instrument
-    read_amp_and_phase()
-        Return the amplitude and phase of the signal measured by the instrument
+    read_temperature()
+        Return the temperature measured by the instrument
 
     Notes
     -----
@@ -56,10 +46,7 @@ class CryoCon32B(VisaInstrument):
     @secure_communication()
     def read_temperature(self):
         """
-        Return the x quadrature measured by the instrument
-
-        Perform a direct reading without any waiting. Can return non
-        independent values if the instrument is queried too often.
+        Return the temperature for the channel A measured by the instrument
 
         """
         value = self.ask_for_values('INPUT A:TEMPER?')
