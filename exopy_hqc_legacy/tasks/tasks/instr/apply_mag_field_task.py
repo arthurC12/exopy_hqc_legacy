@@ -17,6 +17,8 @@ from atom.api import (Unicode, Float, Bool, set_default)
 
 from exopy.tasks.api import InstrumentTask, validators
 
+from exopy_hqc_legacy.instruments.drivers.driver_tools import InstrTimeoutError
+
 
 class ApplyMagFieldTask(InstrumentTask):
     """Use a supraconducting magnet to apply a magnetic field. Parallel task.
@@ -71,9 +73,12 @@ class ApplyMagFieldTask(InstrumentTask):
 
             # set the magnetic field
             job = driver.sweep_to_field(target_value, self.rate)
-            normal_end = job.wait_for_completion(self.check_for_interruption,
-                                                 timeout=60,
-                                                 refresh_time=10)
+            try:
+                normal_end = job.wait_for_completion(self.check_for_interruption,
+                                                    timeout=60,
+                                                    refresh_time=10)
+            except InstrTimeoutError:
+                normal_end = False
 
         # Always close the switch heater when the ramp was interrupted.
         if not normal_end:
@@ -81,7 +86,8 @@ class ApplyMagFieldTask(InstrumentTask):
             driver.heater_state = 'Off'
             sleep(self.post_switch_wait)
             self.write_in_database('field', driver.read_persistent_field())
-            return False
+            self.root.should_stop.set()
+            return
 
         # turn off heater
         if self.auto_stop_heater:
