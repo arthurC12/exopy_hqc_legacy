@@ -16,6 +16,7 @@ from inspect import cleandoc
 from atom.api import (Str, Float, Bool, set_default)
 
 from exopy.tasks.api import InstrumentTask, validators
+from exopy_hqc_legacy.instruments.drivers.driver_tools import InstrTimeoutError
 
 
 class ApplyMagFieldTask(InstrumentTask):
@@ -74,19 +75,22 @@ class ApplyMagFieldTask(InstrumentTask):
             driver.output_fluctuations):
             # set the magnetic field
             job = driver.sweep_to_field(target_value, self.rate)
-            normal_end = job.wait_for_completion(self.check_for_interruption,
-                                                 timeout=60,
-                                                 refresh_time=10)
-            print('field:', driver.read_persistent_field())
 
-        # Always close the switch heater when the ramp was interrupted.
+            try:
+                normal_end = job.wait_for_completion(self.check_for_interruption,
+                                                    timeout=60,
+                                                    refresh_time=10)
+            except InstrTimeoutError:
+                job.cancel() # stops the sweep and turn off the switch heater
+                self.write_in_database('field', driver.read_persistent_field())
+                # if not normal_end, fail the measurement
+                self.root.should_stop.set()
+                raise ValueError(cleandoc('''Field source did not set the field to 
+                                          {}'''.format(target_value)))
+
         if not normal_end:
-            job.cancel() # stops the sweep and turn off the switch heater
-            self.write_in_database('field', driver.read_persistent_field())
-            # if not normal_end, fail the measurement
-            self.root.should_stop.set()
-            raise ValueError(cleandoc('''Field source did not set the field to 
-                                         {}'''.format(target_value)))
+            # when a stôp signal has been send to the measurement
+            return
 
         # turn off heater if required
         if self.auto_stop_heater:
