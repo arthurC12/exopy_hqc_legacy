@@ -59,41 +59,47 @@ class ApplyMagFieldTask(InstrumentTask):
 
         driver = self.driver
         normal_end = True
-        if (abs(driver.read_persistent_field() - target_value) >
-                driver.output_fluctuations):
+        # Only if driver.heater_state == 'Off' otherwise we wait for 
+        # post_switch_wait no matter what
+        if driver.heater_state == 'Off':
             job = driver.sweep_to_persistent_field()
             if job.wait_for_completion(self.check_for_interruption,
-                                       timeout=60, refresh_time=1):
+                                       timeout=60, refresh_time=3):
                 driver.heater_state = 'On'
                 sleep(self.post_switch_wait)
             else:
                 return False
 
+        if (abs(driver.read_persistent_field() - target_value) > 
+            driver.output_fluctuations):
             # set the magnetic field
             job = driver.sweep_to_field(target_value, self.rate)
             normal_end = job.wait_for_completion(self.check_for_interruption,
                                                  timeout=60,
                                                  refresh_time=10)
+            print('field:', driver.read_persistent_field())
 
         # Always close the switch heater when the ramp was interrupted.
         if not normal_end:
-            job.cancel()
-            driver.heater_state = 'Off'
-            sleep(self.post_switch_wait)
+            job.cancel() # stops the sweep and turn off the switch heater
             self.write_in_database('field', driver.read_persistent_field())
-            return False
+            # if not normal_end, fail the measurement
+            self.root.should_stop.set()
+            raise ValueError(cleandoc('''Field source did not set the field to 
+                                         {}'''.format(target_value)))
 
-        # turn off heater
+        # turn off heater if required
         if self.auto_stop_heater:
             driver.heater_state = 'Off'
             sleep(self.post_switch_wait)
-            job = driver.sweep_to_field(0)
+            # sweep down to zero at the fast sweep rate
+            job = driver.sweep_to_field(0, driver.fast_sweep_rate)
             job.wait_for_completion(self.check_for_interruption,
-                                    timeout=60, refresh_time=1)
+                                    timeout=60, refresh_time=3)
 
         self.write_in_database('field', target_value)
 
-        
+
 class ApplyMagFieldAndDropTask(InstrumentTask):
     """Use a supraconducting magnet to apply a magnetic field. Parallel task.
 
