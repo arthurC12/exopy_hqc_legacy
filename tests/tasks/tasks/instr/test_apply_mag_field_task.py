@@ -43,7 +43,9 @@ class TestApplyMagFieldTask(object):
             {'Test1':
                 {'connections': {'C': {'owner': [],
                                        'output_fluctuations': 1e-6,
-                                       'heater_state': ['On', 'Off']}},
+                                       'heater_state': ['On', 'Off'],
+                                       'fast_sweep_rate': '1.',
+                                       'field_sweep_rate': '1.'}},
                  'settings': {'S': {'sweep_to_field': [DummyJob(),  DummyJob(),
                                                        DummyJob()],
                                     'sweep_to_persistent_field': [DummyJob()],
@@ -85,8 +87,6 @@ class TestApplyMagFieldTask(object):
 
         """
         self.task.field = '2.0'
-        self.task.fast_sweep_rate = '1.0'
-        self.task.field_sweep_rate = '1.0'
 
         self.root.prepare()
         self.task.perform()
