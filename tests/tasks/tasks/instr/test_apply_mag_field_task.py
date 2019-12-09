@@ -37,7 +37,7 @@ class TestApplyMagFieldTask(object):
                                       parallel={'activated': False})
         self.root.add_child_task(0, self.task)
 
-        self.root.run_time[DRIVERS] = {'Test': (InstrHelper({'heater_state': ['On', 'Off']}),
+        self.root.run_time[DRIVERS] = {'Test': (InstrHelper(),
                                                 InstrHelperStarter())}
         self.root.run_time[PROFILES] =\
             {'Test1':
@@ -47,6 +47,7 @@ class TestApplyMagFieldTask(object):
                  'settings': {'S': {'sweep_to_field': [DummyJob(),  DummyJob(),
                                                        DummyJob()],
                                     'sweep_to_persistent_field': [DummyJob()],
+                                    'heater_state': ['On', 'Off'],
                                     'read_persistent_field': [1],
                                     'check_connection': [True]}}
                  }
