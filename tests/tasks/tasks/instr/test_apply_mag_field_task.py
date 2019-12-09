@@ -85,6 +85,8 @@ class TestApplyMagFieldTask(object):
 
         """
         self.task.field = '2.0'
+        self.task.fast_sweep_rate = '1.0'
+        self.task.field_sweep_rate = '1.0'
 
         self.root.prepare()
         self.task.perform()
