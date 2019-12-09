@@ -81,15 +81,17 @@ class ApplyMagFieldTask(InstrumentTask):
                                                     timeout=60,
                                                     refresh_time=10)
             except InstrTimeoutError:
-                job.cancel() # stops the sweep and turn off the switch heater
+                # job.timeout() has been called, which stops the sweep and turn off 
+                # the switch heater
                 self.write_in_database('field', driver.read_persistent_field())
-                # if not normal_end, fail the measurement
+                # fail the measurement
                 self.root.should_stop.set()
                 raise ValueError(cleandoc('''Field source did not set the field to 
                                           {}'''.format(target_value)))
 
         if not normal_end:
-            # when a stôp signal has been send to the measurement
+            # this happens when a stop signal has been send to the measurement
+            job.cancel()
             return
 
         # turn off heater if required

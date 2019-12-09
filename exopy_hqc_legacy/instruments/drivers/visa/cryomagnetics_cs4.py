@@ -125,11 +125,19 @@ class CS4(VisaInstrument):
         # Create job.
         span = abs(self.read_output_field() - value)
         wait = 60 * span / rate
-        job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep)
+        job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep,
+                       timeout=stop_sweep_safe)
         return job
 
     @secure_communication()
     def stop_sweep(self):
+        """Stop the field sweep at the current value.
+
+        """
+        self.activity = 'Hold'
+
+    @secure_communication()
+    def stop_sweep_safe(self):
         """Stop the field sweep at the current value, and turn of the switch heater.
 
         """
