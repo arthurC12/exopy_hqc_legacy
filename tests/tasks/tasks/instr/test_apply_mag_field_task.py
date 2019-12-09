@@ -43,11 +43,10 @@ class TestApplyMagFieldTask(object):
             {'Test1':
                 {'connections': {'C': {'owner': [],
                                        'output_fluctuations': 1e-6,
-                                       'heater_state': []}},
+                                       'heater_state': ['On', 'Off']}},
                  'settings': {'S': {'sweep_to_field': [DummyJob(),  DummyJob(),
                                                        DummyJob()],
                                     'sweep_to_persistent_field': [DummyJob()],
-                                    'heater_state': ['On', 'Off'],
                                     'read_persistent_field': [1],
                                     'check_connection': [True]}}
                  }
