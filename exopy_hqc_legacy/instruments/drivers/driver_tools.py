@@ -163,11 +163,15 @@ class InstrJob(object):
     cancel : Callable, optional
         Function to cancel the task.
 
+    timeout : Callable, optional
+        Function called when the task timeouts
+
     """
-    def __init__(self, condition_callable, expected_waiting_time, cancel):
+    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout):
         self.condition_callable = condition_callable
         self.expected_waiting_time = expected_waiting_time
         self.cancel = cancel
+        self.timeout = timeout
         self._start_time = time.time()
 
     def wait_for_completion(self, break_condition_callable=None, timeout=15,
@@ -194,7 +198,7 @@ class InstrJob(object):
         Raises
         ------
         InstrTimeoutError:
-            Raised if the operation timeout.
+            Raised if the operation timeout. 
         """
         while True:
             remaining_time = (self.expected_waiting_time -
@@ -216,6 +220,8 @@ class InstrJob(object):
                 return True
             if remaining_time < 0 or break_condition_callable():
                 if remaining_time < 0:
+                    if self.timeout:
+                        self._timeout()
                     raise InstrTimeoutError()
                 else:
                     return False
