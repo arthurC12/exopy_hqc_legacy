@@ -37,7 +37,7 @@ class TestApplyMagFieldTask(object):
                                       parallel={'activated': False})
         self.root.add_child_task(0, self.task)
 
-        self.root.run_time[DRIVERS] = {'Test': (InstrHelper(),
+        self.root.run_time[DRIVERS] = {'Test': (InstrHelper,
                                                 InstrHelperStarter())}
         self.root.run_time[PROFILES] =\
             {'Test1':
