@@ -126,7 +126,7 @@ class CS4(VisaInstrument):
         span = abs(self.read_output_field() - value)
         wait = 60 * span / rate
         job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep,
-                       timeout=stop_sweep_safe)
+                       timeout=self.stop_sweep_safe)
         return job
 
     @secure_communication()

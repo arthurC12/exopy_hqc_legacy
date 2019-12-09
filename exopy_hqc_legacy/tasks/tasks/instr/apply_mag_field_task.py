@@ -65,7 +65,7 @@ class ApplyMagFieldTask(InstrumentTask):
         if driver.heater_state == 'Off':
             job = driver.sweep_to_persistent_field()
             if job.wait_for_completion(self.check_for_interruption,
-                                       timeout=60, refresh_time=3):
+                                       timeout=60, refresh_time=1):
                 driver.heater_state = 'On'
                 sleep(self.post_switch_wait)
             else:
@@ -79,7 +79,7 @@ class ApplyMagFieldTask(InstrumentTask):
             try:
                 normal_end = job.wait_for_completion(self.check_for_interruption,
                                                     timeout=60,
-                                                    refresh_time=10)
+                                                    refresh_time=5)
             except InstrTimeoutError:
                 # job.timeout() has been called, which stops the sweep and turn off 
                 # the switch heater
@@ -101,7 +101,7 @@ class ApplyMagFieldTask(InstrumentTask):
             # sweep down to zero at the fast sweep rate
             job = driver.sweep_to_field(0, driver.fast_sweep_rate)
             job.wait_for_completion(self.check_for_interruption,
-                                    timeout=60, refresh_time=3)
+                                    timeout=60, refresh_time=1)
 
         self.write_in_database('field', target_value)
 

@@ -221,7 +221,7 @@ class InstrJob(object):
             if remaining_time < 0 or break_condition_callable():
                 if remaining_time < 0:
                     if self.timeout:
-                        self._timeout()
+                        self.timeout()
                     raise InstrTimeoutError()
                 else:
                     return False
