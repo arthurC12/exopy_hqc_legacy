@@ -142,7 +142,7 @@ class CS4(VisaInstrument):
 
         """
         self.activity = 'Hold'
-        driver.heater_state = 'Off'
+        self.heater_state = 'Off'
         sleep(self.post_switch_wait)
 
     def check_connection(self):
