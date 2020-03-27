@@ -152,7 +152,7 @@ class VisaInstrument(BaseInstrument):
         Simply call the `read_values` method of the `Instrument` object
         stored in the attribute `_driver`
         """
-        return self._driver.read_values(format=0)
+        return self._driver.read_values(format)
 
     def read_ascii_values(self, converter='f', separator=','):
         """Read one line of the instrument's buffer and convert to values.
