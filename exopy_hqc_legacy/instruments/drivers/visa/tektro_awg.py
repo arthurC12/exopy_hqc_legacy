@@ -506,10 +506,10 @@ class AWG(VisaInstrument):
 
         """
         name_str = 'MMEMory:DATA "{}",'.format(filename+'.awg')
-        size_str = ('#' + str(len(str(len(awg_file)))) + str(len(awg_file)))
+        size_str = ('#' + str(len(str(len(awg_data)))) + str(len(awg_data)))
         mes = name_str + size_str
         self.write('MMEMory:CDIRectory "/Users/OEM/Documents"')
-        self._driver.write_raw(mes.encode('ASCII') + awg_file)
+        self._driver.write_raw(mes.encode('ASCII') + awg_data)
         self.write('AWGCONTROL:SRESTORE "{}"'.format(filename+'.awg'))
 
     @secure_communication()
@@ -548,14 +548,14 @@ class AWG(VisaInstrument):
         """Ask the current position index of the sequencer
 
         """
-        return self.ask('AWGC:SEQ:POS?')
+        return self.query('AWGC:SEQ:POS?')
 
     @secure_communication()
     def force_jump_to(self, pos):
         """Make the sequencer jump to position pos
 
         """
-        self.ask('SEQUENCE:JUMP:IMMEDIATE {}'.format(pos))
+        self.query('SEQUENCE:JUMP:IMMEDIATE {}'.format(pos))
 
     @secure_communication()
     def set_repeat(self, position, repeat):
@@ -730,10 +730,8 @@ class AWG(VisaInstrument):
         self.clear_output_buffer()
         if value in ('RUN', 1, 'True', True):
             self.write('AWGC:RUN:IMM')
-            self.write('AWGC:RST?')
-            time.sleep(delay)
-            values = self.read_values(format=2)
-            if values[0] not in (1, 2):
+            run_mode = int(self.query('AWGC:RST?', delay=delay))
+            if run_mode not in (1, 2):
                 raise InstrIOError(cleandoc('''Instrument did not set
                                             correctly the run state'''))
         elif value in ('STOP', 0, 'False', False):
@@ -753,12 +751,12 @@ class AWG(VisaInstrument):
 
         """
         self.clear_output_buffer()
-        run = self.ask_for_values("AWGC:RST?")[0]
-        if run == 0:
+        running = int(self.query("AWGC:RST?"))
+        if running == 0:
             return False
-        if run == 1 or run == 2:
+        if running == 1 or running == 2:
             return True
-        raise InstrIOError
+        raise InstrIOError(cleandoc('''Couldn't read the run mode'''))
 
     @instrument_property
     @secure_communication()
@@ -811,14 +809,14 @@ class AWG(VisaInstrument):
         try:
             # Number of user defined waveforms
             # 25 is the number of default waveforms
-            nb_waveforms = int(self.ask("WLIST:SIZE?")) - 25
+            nb_waveforms = int(self.query("WLIST:SIZE?")) - 25
         except Exception:
             nb_waveforms = 0
-        wait_time = 1+int(nb_waveforms/120)
+        wait_time = 1 + int(nb_waveforms / 120)
         self.write('WLIST:WAVEFORM:DELETE ALL')
 
-        logging.info('Waiting {}s for {} waveforms to be deleted'.format(wait_time,
-                                                                         nb_waveforms))
+        msg = 'Waiting {}s for {} waveforms to be deleted'
+        logging.info(msg.format(wait_time,  nb_waveforms))
         time.sleep(wait_time)
 
     def clear_all_sequences(self):

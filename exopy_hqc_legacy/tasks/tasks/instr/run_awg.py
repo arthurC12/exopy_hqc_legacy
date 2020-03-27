@@ -12,7 +12,7 @@
 import logging
 import time
 
-from atom.api import (Str, set_default)
+from atom.api import (Float, Str, set_default)
 
 from exopy.tasks.api import InstrumentTask
 
