@@ -390,11 +390,11 @@ class AgilentPNAChannel(BaseInstrument):
         sweep_type = self.sweep_type
         sweep_points = self.sweep_points
         if sweep_type == 'LIN':
-            sweep_start = float(self._pna.query(
-                'SENSe{}:FREQuency:STARt?'.format(self._channel)))*1e-9
-            sweep_stop = float(self._pna.query(
-                'SENSe{}:FREQuency:STOP?'.format(self._channel)))*1e-9
-            return np.linspace(sweep_start, sweep_stop, sweep_points)
+            sweep_start = self._pna.ask_for_values(
+                'SENSe{}:FREQuency:STARt?'.format(self._channel))[0]*1e-9
+            sweep_stop = self._pna.ask_for_values(
+                'SENSe{}:FREQuency:STOP?'.format(self._channel))[0]*1e-9
+            return np.linspace(sweep_start, sweep_stop, int(sweep_points))
         elif sweep_type == 'POW':
             sweep_start = float(self._pna.query('SOURce{}:POWer:STARt?'
                                                 .format(self._channel)))
