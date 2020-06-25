@@ -284,13 +284,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         kind = 'RF source'
                         connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
                                         }
-                    Driver:
-                        driver = ('rohde_and_schwarz_arbitrary_generator:'
-                                  'RohdeSchwarzHMF2550')
-                        model = 'HMF2550'
-                        kind = 'RF source'
-                        connections = {'VisaRS232': {'resource_class': 'INSTR'}
-                                        }
+
                 Drivers:
                     manufacturer = 'Anapico'
                     Driver:
@@ -318,11 +312,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                     manufacturer = 'AlazarTech'
                     model = 'ATS9350'
 
-                Driver:
-                    driver = 'SA124B:SA124B'
-                    manufacturer = 'SignalHound'
-                    model = 'SA124B'
-
     Extension:
         id = 'exopy_hqc_legacy.tasks'
         point = 'exopy.tasks.declarations'
@@ -342,13 +331,13 @@ enamldef HqcLegacyManifest(PluginManifest):
 #                    view = 'views.fit_resonance_views:FitResonanceView'
                 Task:
                     task = 'fit_resonance_tasks:FitResonanceTask'
-                    view = 'views.fit_resonance_views:FitResonanceView'
+                    view = 'views.fit_resonance_view:FitResonanceView'
                     Interface:
                         interface = 'fit_resonance_tasks:FitVNAInterface'
-                        views = ['views.fit_resonance_views:FitVNAInterfaceView']
+                        views = ['views.fit_resonance_view:FitVNAInterfaceView']
                     Interface:
                         interface = 'fit_resonance_tasks:FitAlazarInterface'
-                        views = ['views.fit_resonance_views:FitAlazarInterfaceView']
+                        views = ['views.fit_resonance_view:FitAlazarInterfaceView']
                 Task:
                     task = 'load_tasks:LoadArrayTask'
                     view = 'views.load_views:LoadArrayView'
@@ -415,7 +404,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico']
-                                   'exopy_hqc_legacy.Legacy.RohdeSchwarzHMF2550']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'pna_tasks:PNASetRFFrequencyInterface'
@@ -472,7 +460,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24',
                                    'exopy_hqc_legacy.Legacy.Anapico']
-                                   'exopy_hqc_legacy.Legacy.RohdeSchwarzHMF2550']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
@@ -557,8 +544,4 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'run_awg:RunAWGTask'
                     view = 'views.run_awg_views:RunAWGView'
-                    instruments = ['exopy_hqc_legacy.Legacy.AWG']
-                Task:
-                    task = 'tune_IQ_mixer:TuneIQMixerTask'
-                    view = 'views.tune_IQ_mixer_views:TuneIQmixerView'
                     instruments = ['exopy_hqc_legacy.Legacy.AWG']
