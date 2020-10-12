@@ -288,9 +288,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                     manufacturer = 'Anapico'
                     Driver:
                         driver = 'anapico:Anapico'
-                        model = 'APSING20G'
+                        model = 'Anapico'
                         connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
+                    Driver:
+                        driver = 'anapico:AnapicoMulti'
+                        model = 'AnapicoMULTI'
+                        connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+
             Drivers:
                 path = 'dll'
                 starter = 'exopy_hqc_legacy.starter.dll'
@@ -304,6 +310,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                     driver = 'alazar935x:Alazar935x'
                     manufacturer = 'AlazarTech'
                     model = 'ATS9350'
+
+                Driver:
+                    driver = 'SA124B:SA124B'
+                    manufacturer = 'SignalHound'
+                    model = 'SA124B'
 
     Extension:
         id = 'exopy_hqc_legacy.tasks'
@@ -397,7 +408,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
                                  'views.synthHD_task_views:ISynthHDChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD']
+                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD',
+                                       'exopy_hqc_legacy.Legacy.AnapicoMulti']
                 Task:
                     task = 'rf_tasks:SetRFPowerTask'
                     view = 'views.rf_views:RFPowerView'
@@ -420,7 +432,18 @@ enamldef HqcLegacyManifest(PluginManifest):
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
                                  'views.synthHD_task_views:ISynthHDChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD']
+                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD',
+                                       'exopy_hqc_legacy.Legacy.AnapicoMulti']
+                Task:
+                    task = 'rf_tasks:SetRFPhaseTask'
+                    view = 'views.rf_views:RFPhaseView'
+                    instruments = []
+                    metadata = {'loopable': True}
+                    Interface:
+                        interface = 'synthHD_tasks:SynthHDsetChannelInterface'
+                        views = ['views.synthHD_task_views:ISynthHDChannelLabel',
+                                 'views.synthHD_task_views:ISynthHDChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
                 Task:
                     task = 'rf_tasks:SetRFOnOffTask'
                     view = 'views.rf_views:RFSetOnOffView'
@@ -436,7 +459,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
                                  'views.synthHD_task_views:ISynthHDChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD']
+                        instruments = ['exopy_hqc_legacy.Legacy.SynthHD',
+                                       'exopy_hqc_legacy.Legacy.AnapicoMulti']
                 Task:
                     task = 'rf_tasks:SetPulseModulationTask'
                     view = 'views.rf_views:PulseModulationView'

@@ -126,6 +126,29 @@ class Anapico(VisaInstrument):
 
     @instrument_property
     @secure_communication()
+    def phase(self):
+        """Phase of the output signal.
+
+        """
+        phase = self.ask_for_values('PHASE?')[0]
+        if phase is not None:
+            return phase
+        else:
+            raise InstrIOError
+
+    @phase.setter
+    @secure_communication()
+    def phase(self, value):
+        """Phase setter method.
+
+        """
+        self.write('PHASE {}'.format(value))
+        result = self.ask_for_values('PHASE?')[0]
+        if abs(result - value) > 1e-4:
+            raise InstrIOError('Instrument did not set correctly the phase')
+
+    @instrument_property
+    @secure_communication()
     def output(self):
         """Output state of the source.
 
@@ -199,3 +222,55 @@ class Anapico(VisaInstrument):
             mess = fill(cleandoc('''The invalid value {} was sent to
                         switch_on_off method''').format(value), 80)
             raise VisaTypeError(mess)
+
+class AnapicoMulti(Anapico):
+    """
+    Generic driver for Anapico Signal Generators,
+    using the VISA library.
+
+    Parameters
+    ----------
+    see the `VisaInstrument` parameters
+
+    Attributes
+    ----------
+    frequency_unit : str
+        Frequency unit used by the driver. The default unit is 'GHz'. Other
+        valid units are : 'MHz', 'KHz', 'Hz'
+    frequency : float, instrument_property
+        Fixed frequency of the output signal.
+    power : float, instrument_property
+        Fixed power of the output signal.
+    output : bool, instrument_property
+        State of the output 'ON'(True)/'OFF'(False).
+    """
+    def __init__(self, connection_info, caching_allowed=True,
+                 caching_permissions={}, auto_open=True):
+
+        super(AnapicoMulti, self).__init__(connection_info,
+                                      caching_allowed,
+                                      caching_permissions,
+                                      auto_open)
+
+    @instrument_property
+    @secure_communication()
+    def channel(self):
+        """Power of the output signal.
+
+        """
+        channel = self.ask_for_values('SELect?')[0]
+        if channel is not None:
+            return channel
+        else:
+            raise InstrIOError
+
+    @channel.setter
+    @secure_communication()
+    def channel(self, value):
+        """Power setter method.
+
+        """
+        self.write(':SELect {}'.format(value))
+        result = self.ask_for_values('SELect?')[0]
+        if result != value:
+            raise InstrIOError('Instrument did not set correctly the channel')

@@ -415,7 +415,7 @@ class ZNB20Channel(BaseInstrument):
                 'SENSe{}:FREQuency:STARt?'.format(self._channel))[0]*1e-9
             sweep_stop = self._pna.ask_for_values(
                 'SENSe{}:FREQuency:STOP?'.format(self._channel))[0]*1e-9
-            return np.linspace(sweep_start, sweep_stop, sweep_points)
+            return np.linspace(sweep_start, sweep_stop, int(sweep_points))
         elif sweep_type == 'POW':
             sweep_start = self._pna.ask_for_values('SOURce{}:POWer:STARt?'
                                                    .format(self._channel))[0]

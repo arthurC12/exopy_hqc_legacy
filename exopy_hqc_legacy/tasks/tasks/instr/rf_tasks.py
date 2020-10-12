@@ -109,6 +109,32 @@ class SetRFPowerTask(InterfaceableTaskMixin, InstrumentTask):
         self.write_in_database('power', power)
 
 
+class SetRFPhaseTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set the phase of the signal delivered by the source.
+
+    """
+    # Target power (dynamically evaluated)
+    phase = Str().tag(pref=True, feval=LOOP_REAL)
+
+    # Whether to start the source if its output is off.
+    auto_start = Bool(False).tag(pref=True)
+
+    database_entries = set_default({'phase': 0.0})
+
+    def i_perform(self, phase=None):
+        """
+
+        """
+        if self.auto_start:
+            self.driver.output = 'On'
+
+        if phase is None:
+            phase = self.format_and_eval_string(self.phase)
+
+        self.driver.phase = phase
+        self.write_in_database('phase', phase)
+
+
 class SetRFOnOffTask(InterfaceableTaskMixin, InstrumentTask):
     """Switch on/off the output of the source.
 
