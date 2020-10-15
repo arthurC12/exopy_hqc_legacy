@@ -90,10 +90,11 @@ class FitVNAInterface(TaskInterface):
 
         freq = array[self.column_name_freq]
         data_maglin = array[self.column_name_maglin]
+        delay = 111
 
         if self.mode == 'Reflection':
             data_phase = array[self.column_name_phase]
-            data_c = data_maglin*np.exp(1j*np.pi/180*data_phase)
+            data_c = data_maglin*np.exp(1j*np.pi/180*data_phase)*np.exp(1j*2*np.pi*freq*delay*1e-9)
             if use_ref:
                 freq_ref = array_ref[self.column_name_freq]
                 data_maglin_ref = array_ref[self.column_name_maglin]
@@ -371,7 +372,7 @@ def complex_a_out(f, f_0, kc, ki, a_in, T):  # kc and ki are kappas/2pi
 def fit_complex_a_out(f, a_out):
     f_0, kc = get_f0_reflection(f, a_out)
     kc = 10e6
-    ki = kc
+    ki = 1e6
     T = 0
 
 #    plt.close('all')
