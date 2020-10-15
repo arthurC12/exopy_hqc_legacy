@@ -160,7 +160,7 @@ class YokogawaGS200(VisaInstrument):
         self.write(":SOURce:LEVel {}".format(set_point))
         value = self.query('SOURce:LEVel?')
         # to avoid floating point rouding
-        if abs(float(value) - round(set_point, 9)) > 10**-9:
+        if abs(float(value) - round(set_point, 9)) > 10**-8:
             raise InstrIOError('Instrument did not set correctly the current')
 
     @instrument_property
