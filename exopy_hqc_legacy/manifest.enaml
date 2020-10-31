@@ -522,6 +522,18 @@ enamldef HqcLegacyManifest(PluginManifest):
                     view = 'views.dc_views:SetDcOutputView'
                     instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200']
                     metadata = {'loopable': True}
+                    Interface:
+                        interface = ('dc_tasks:'
+                                     'MultiChannelOutputSourceInterface')
+                        views = ['views.dc_views:'
+                                 'MultiChannelVoltageSourceILabelModule',
+								 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIModule',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceILabel',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIChannel']
+                        instruments = ['exopy_hqc_legacy.Legacy.TinyBilt']
                 Task:
                     task = 'spdev_tasks:DemodSPTask'
                     view = 'views.spdev_views:DemodSpView'

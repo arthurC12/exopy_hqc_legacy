@@ -12,7 +12,7 @@
 import time
 import numbers
 
-from atom.api import (Float, Value, Str, Int, set_default, Tuple)
+from atom.api import (Float, Value, Str, Int, set_default, Tuple, Enum)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
@@ -139,6 +139,8 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
         task = self.task
         if not self.channel_driver:
             self.channel_driver = task.driver.get_channel(self.channel)
+            print('channel')
+            print(self.channel_driver._channel)
         if self.channel_driver.owner != task.name:
             self.channel_driver.owner = task.name
             if hasattr(self.channel_driver, 'function') and\
@@ -149,7 +151,6 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
 
         setter = lambda value: setattr(self.channel_driver, 'voltage', value)
         current_value = getattr(self.channel_driver, 'voltage')
-
         task.smooth_set(value, setter, current_value)
 
     def check(self, *args, **kwargs):
@@ -296,21 +297,70 @@ class SetDCOutputTask(InterfaceableTaskMixin, InstrumentTask):
 
     """
     #: Target value for the source output
-    switch = Str('OFF').tag(pref=True, feval=validators.SkipLoop())
+    switch = Enum('ON', 'OFF').tag(pref=True)
 
-    database_entries = set_default({'output': 'OFF'})
+    database_entries = set_default({'output': 'ON'})
 
-    def i_perform(self, switch=None):
+    def i_perform(self):
         """Default interface.
 
         """
-        if switch is None:
-            switch = self.format_and_eval_string(self.switch)
-
-        if switch == 'ON':
-            self.driver.output = 'ON'
+        if self.switch == 'ON':
+            print(self.switch)
+            print(self.channel_driver._channel)
+            print(self.driver._channel)
+            print(self.switch)
+            self.channel_driver.output = 'ON'
             self.write_in_database('output', 'ON')
 
-        if switch == 'OFF':
+        if self.switch == 'OFF':
             self.driver.output = 'OFF'
             self.write_in_database('output', 'OFF')
+
+class MultiChannelOutputSourceInterface(TaskInterface):
+    """Interface for multiple outputs sources.
+
+    """
+    #: Id of the channel to use.
+    channel = Tuple(default=(1, 1)).tag(pref=True)
+
+    #: Reference to the driver for the channel.
+    channel_driver = Value()
+
+    def perform(self):
+        """Set the specified voltage.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+            print(self.channel_driver._channel)
+        # if self.channel_driver.owner != task.name:
+        #     self.channel_driver.owner = task.name
+        #     if hasattr(self.channel_driver, 'function') and\
+        #             self.channel_driver.function != 'VOLT':
+        #         msg = ('Instrument output assigned to task {} is not '
+        #                'configured to output a voltage')
+        #         raise ValueError(msg.format(self.name))
+
+        task.i_perform()
+
+    def check(self, *args, **kwargs):
+        if kwargs.get('test_instr'):
+            task = self.task
+            traceback = {}
+            with task.test_driver() as d:
+                if d is None:
+                    return True, {}
+                if self.channel not in d.defined_channels:
+                    key = task.get_error_path() + '_interface'
+                    traceback[key] = 'Missing channel {}'.format(self.channel)
+
+            if traceback:
+                return False, traceback
+            else:
+                return True, traceback
+
+        else:
+            return True, {}
+

@@ -140,7 +140,7 @@ class SetRFOnOffTask(InterfaceableTaskMixin, InstrumentTask):
 
     """
     # Desired state of the output, runtime value can be 0 or 1.
-    switch = Str('Off').tag(pref=True, feval=validators.SkipLoop())
+    switch = Str("'Off'").tag(pref=True, feval=validators.SkipLoop())
 
     database_entries = set_default({'output': 0})
 
@@ -183,7 +183,7 @@ class SetPulseModulationTask(InterfaceableTaskMixin, InstrumentTask):
 
     """
     # Desired state of the output, runtime value can be 0 or 1.
-    switch = Str('Off').tag(pref=True, feval=validators.SkipLoop())
+    switch = Str("'Off'").tag(pref=True, feval=validators.SkipLoop())
 
     database_entries = set_default({'pm_state': 0})
 
