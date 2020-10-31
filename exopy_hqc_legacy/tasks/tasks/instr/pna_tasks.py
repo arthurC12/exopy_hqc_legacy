@@ -302,7 +302,7 @@ class PNASweepTask(SingleChannelPNATask):
     points = Str().tag(pref=True, feval=FEVAL)
 
     #: Kind of sweep to perform.
-    sweep_type = Enum('', 'Frequency', 'Power').tag(pref=True)
+    sweep_type = Enum('', 'Frequency', 'Power', 'CW').tag(pref=True)
 
     #: Measures to perform.
     measures = List().tag(pref=True)
@@ -378,7 +378,7 @@ class PNASweepTask(SingleChannelPNATask):
         while not self.driver.check_operation_completion():
             time.sleep(0.1*waiting_time)
 
-        data = [np.linspace(start, stop, points)]
+        data = [self.channel_driver.sweep_x_axis]
         for i, meas_name in enumerate(meas_names):
             if self.measures[i][1]:
                 data.append(

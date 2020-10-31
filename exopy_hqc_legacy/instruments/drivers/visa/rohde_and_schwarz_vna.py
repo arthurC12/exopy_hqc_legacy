@@ -333,6 +333,11 @@ class ZNB20Channel(BaseInstrument):
                                                              start))
             self._pna.write('SOURce{}:POWer:STOP {}'.format(self._channel,
                                                             stop))
+        elif sweep_type == 'CW':
+            self.sweep_type ='POINT'
+            self.sweep_points = sweep_points
+            self._pna.write('SENSe{}:FREQuency:CW {}'.format(self._channel,
+                                                               start))
         else:
             raise ZNB20ChannelError(cleandoc('''Unsupported type of sweep
             : {} was specified for channel'''.format(sweep_type,
@@ -415,7 +420,7 @@ class ZNB20Channel(BaseInstrument):
                 'SENSe{}:FREQuency:STARt?'.format(self._channel))[0]*1e-9
             sweep_stop = self._pna.ask_for_values(
                 'SENSe{}:FREQuency:STOP?'.format(self._channel))[0]*1e-9
-            return np.linspace(sweep_start, sweep_stop, int(sweep_points))
+            return np.linspace(sweep_start, sweep_stop, sweep_points)
         elif sweep_type == 'POW':
             sweep_start = self._pna.ask_for_values('SOURce{}:POWer:STARt?'
                                                    .format(self._channel))[0]
@@ -430,6 +435,11 @@ class ZNB20Channel(BaseInstrument):
                             'SENSe{}:FREQuency:STOP?'
                             .format(self._channel))[0]*1e-9
             return np.logspace(sweep_start, sweep_stop, sweep_points)
+        elif sweep_type == 'POIN' or sweep_type == 'POINT':
+            frequency = self._pna.ask_for_values(
+                            'SENSe{}:FREQuency:CW?'
+                            .format(self._channel))[0]*1e-9
+            return np.ones(sweep_points)*frequency
         else:
             raise InstrIOError(cleandoc('''Sweep type of ZNB20 not yet
                 supported for channel {}'''.format(self._channel)))
@@ -585,7 +595,7 @@ class ZNB20Channel(BaseInstrument):
         points = self._pna.ask_for_values('SENSe{}:SWEep:POINts?'.format(
                                           self._channel))
         if points:
-            return points[0]
+            return int(points[0])
         else:
             raise InstrIOError(cleandoc('''ZNB20 did not return the
                     channel {} sweep point number'''.format(self._channel)))

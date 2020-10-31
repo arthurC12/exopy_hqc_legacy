@@ -156,8 +156,13 @@ def label_maker(label, mode):
     """
     if mode == 'Frequency':
         return label + '(Hz)'
-    else:
+    elif mode == 'Power':
         return label + '(dBm)'
+    elif mode == 'CW':
+        if label == 'Start':
+            return 'CW Frequency (Hz)'
+        else:
+            return '(discarded field)'
 
 
 enamldef PNASweepMeasView(InstrView): view:
