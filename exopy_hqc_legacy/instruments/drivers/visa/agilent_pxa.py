@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 #==============================================================================
-# module : agilent_psa.py
-# author : Benjamin Huard
+# module : agilent_pxa.py
+# author : Zaki Leghtas
 # license : MIT license
 #==============================================================================
 """
-This module defines drivers for agilent PSA.
+This module defines drivers for agilent PXA.
+
 :Contains:
     SpecDescriptor
-    AgilentPSA
+    AgilentPXA
+
 """
 from inspect import cleandoc
 import numpy as np
@@ -42,7 +44,7 @@ class SpecDescriptor():
         self.averagenbr = 1
 
 
-class AgilentPSA(VisaInstrument):
+class AgilentPXA(VisaInstrument):
     """
     """
     caching_permissions = {'start_frequency_SA': False,
@@ -51,17 +53,11 @@ class AgilentPSA(VisaInstrument):
 
     def __init__(self, connection_info, caching_allowed=True,
                  caching_permissions={}, auto_open=True):
-        super(AgilentPSA, self).__init__(connection_info,
+        super(AgilentPXA, self).__init__(connection_info,
                                          caching_allowed,
                                          caching_permissions,
                                          auto_open)
-        self.write("ROSC:SOURCE EXT")  # 10 MHz clock bandwidth external
-        self.write("ROSC:OUTP ON")  # 10 MHz clock bandwidth internal ON
-        self.write("FORM:DATA ASCii")  # lots of data must be read in
-                                       # ASCii format
-        self.write("FORM:BORD NORMAL")  # (TO CHECK)
-        self.mode = self.mode  # initialize PSA properly if SPEC or WAV mode
-        self.spec_header = SpecDescriptor()
+        self.mode = 'SA'
 
     @secure_communication(2)
     def get_spec_header(self):
@@ -83,153 +79,96 @@ class AgilentPSA(VisaInstrument):
                 self.spec_header.totaltime = answer[9]
                 self.spec_header.averagenbr = answer[10]
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return its
+                raise InstrIOError(cleandoc('''Agilent PXA did not return its
                         mode'''))
         else:
-            raise '''PSA is not in Spectrum mode'''
+            raise '''PXA is not in Spectrum mode'''
 
     @secure_communication()
     def read_data(self, trace):
         """
         """
-        DATA_FORMAT = ['raw I/Q data', 'descriptor', '0', '(I,Q) vs time',
-                       'log(mag) vs freq', '0', '0',
-                       'average of log(mag) vs freq', '0', '0', '0',
-                       'mag vs freq in Vrms', 'average of mag vs freq in Vrms']
-        if self.mode == 'SA':
+        # must be read in ASCii format
+        self.write("FORM:DATA ASCii")
+        # stop all the measurements
+        self.write(":ABORT")
+        # go to the "Single sweep" mode
+        self.write(":INIT:CONT OFF")
+        # initiate measurement
+        self.write(":INIT")
 
-            # must be read in ASCii format
-            self.write("FORM:DATA ASCii")
-            # stop all the measurements
-            self.write(":ABORT")
-            # go to the "Single sweep" mode
-            self.write(":INIT:CONT OFF")
-            # initiate measurement
-            self.write(":INIT")
+        #
+        self.query("SWEEP:TIME?")
 
-            #
-            self.query("SWEEP:TIME?")
+        self.write("*WAI")  # SA waits until the averaging is done
+        # Loop to see when the averaging is done
+        while True:
+            try:
+                self.query("SWEEP:TIME?")
+                break
+            except:
+                pass
 
-            self.write("*WAI")  # SA waits until the averaging is done
-            # Loop to see when the averaging is done
-            while True:
-                try:
-                    self.query("SWEEP:TIME?")
-                    break
-                except:
-                    pass
+        data = self.query_ascii_values('trace? trace{}'.format(trace))
 
-            data = self.query_ascii_values('trace? trace{}'.format(trace))
-
-            if data:
-                freq = np.linspace(self.start_frequency_SA,
-                                   self.stop_frequency_SA,
-                                   self.sweep_points_SA)
-                return np.rec.fromarrays([freq, np.array(data)],
+        if data:
+            freq = np.linspace(self.start_frequency_SA,
+                               self.stop_frequency_SA,
+                               self.sweep_points_SA)
+            return np.rec.fromarrays([freq, np.array(data)],
                                          names=['Frequency',
-                                                DATA_FORMAT[trace]])
-            else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
-                    trace {} data'''.format(trace)))
-
-        elif self.mode == 'SPEC':
-            self.get_spec_header()
-            self.write("INIT:IMM;*WAI")  # start the acquisition and wait until
-                                         # over
-            # Check how *OPC? works
-            self.query("*OPC?")
-            data = self.query_ascii_values("FETCH:SPEC{}?".format(trace))
-            if data:
-                if trace in (4, 7, 11, 12):
-                    header = self.spec_header
-                    stop = header.Firstfreq +\
-                        header.Freqstep*(header.FFTnbrSteps-1)
-                    freq = np.linspace(header.Firstfreq, stop,
-                                       header.FFTnbrSteps)
-                    return np.rec.fromarrays([freq, np.array(data)],
-                                             names=['Freq',
-                                                    DATA_FORMAT[trace]])
-                elif trace in (0, 3):
-                    header = self.spec_header
-                    stop = header.firsttime +\
-                        header.TimeStep*(header.TimenbrSteps-1)
-                    freq = np.linspace(header.firsttime, stop,
-                                       header.TimenbrSteps)
-                    return np.rec.fromarrays([freq, np.array(data)],
-                                             names=['Time',
-                                                    DATA_FORMAT[trace]])
-                else:
-                    raise InstrIOError(cleandoc('''Wrong parameters for trace
-                                                in Agilent E4440'''))
-
-            else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
-                    trace data'''))
+                                                'Data'])
         else:
-            self.get_spec_header()
-            self.write("INIT:IMM;*WAI")  # start the acquisition and wait until
-                                         # over
-            #Check how *OPC? works
-            self.query("*OPC?")
+            raise InstrIOError(cleandoc('''Agilent PXA did not return the
+                trace {} data'''.format(trace)))
 
-            # this will get the (I,Q) as a function of freq
-            data = self.query_ascii_values("FETCH:WAV0?")
-            if data:
-                return np.rec.fromarrays([data[::2], data[1::2]],
-                                         'Q', 'I')
-                # one should get all the even indices (Q)
-                # and odd indices (I) separately
-            else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
-                    trace data'''))
+    # @instrument_property
+    # @secure_communication()
+    # def mode(self):
+    #     """
+    #     """
+    #     SAorBASIC = self.query('inst:sel?')
+    #     if SAorBASIC == 'SA':
+    #         return 'SA'
+    #     elif SAorBASIC == 'BASIC':
+    #         conf = self.query('conf?')
+    #         if conf:
+    #             return conf  # SPEC if basic mode with spectral density
+    #                         # or WAV if basic mode with time domain
+    #         else:
+    #             raise InstrIOError(cleandoc('''Agilent PXA did not return its
+    #                 mode'''))
+    #     else:
+    #         raise InstrIOError(cleandoc('''Agilent PXA did not return its
+    #                 mode'''))
 
-    @instrument_property
-    @secure_communication()
-    def mode(self):
-        """
-        """
-        SAorBASIC = self.query('inst:sel?')
-        if SAorBASIC == 'SA':
-            return 'SA'
-        elif SAorBASIC == 'BASIC':
-            conf = self.query('conf?')
-            if conf:
-                return conf  # SPEC if basic mode with spectral density
-                            # or WAV if basic mode with time domain
-            else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return its
-                    mode'''))
-        else:
-            raise InstrIOError(cleandoc('''Agilent PSA did not return its
-                    mode'''))
-
-    @mode.setter
-    @secure_communication()
-    def mode(self, value):
-        """
-        """
-        if value == 'SPEC':
-            self.write('INST:SEL BASIC')
-            self.write('CONF:SPECTRUM')
-            self.write("INIT:CONT ON")  # set in  continuous mode
-            self.write("SENS:SPEC:IFP WIDE")  # set the wide bandWidth 80MHz
-                                              # for spectrum
-            self.write("SENS:SPEC:AVER OFF")  # set the average off
-                                              # for spectrum
-            self.write("INIT:CONT OFF")  # set in single sweep mode
-            self.write("INIT:IMM")
-        elif value == "WAV":
-            self.write('INST:SEL BASIC')
-            self.write('CONF:WAV')
-            self.write("SENS:WAV:IFP WIDE")  # set the wide bandWidth 80MHz
-                                             # for timedomain
-            self.write("SENS:WAV:AVER OFF")  # set the average off
-                                             # for timedomain
-            self.write("SENS:WAV:ADC:DITHER OFF")  # dither signal off
-            self.write("INIT:CONT OFF")  # set in single sweep mode
-            self.write("INIT:IMM")
-        else:
-            self.write('INST:SEL SA')
+    # @mode.setter
+    # @secure_communication()
+    # def mode(self, value):
+    #     """
+    #     """
+    #     if value == 'SPEC':
+    #         self.write('INST:SEL BASIC')
+    #         self.write('CONF:SPECTRUM')
+    #         self.write("INIT:CONT ON")  # set in  continuous mode
+    #         self.write("SENS:SPEC:IFP WIDE")  # set the wide bandWidth 80MHz
+    #                                           # for spectrum
+    #         self.write("SENS:SPEC:AVER OFF")  # set the average off
+    #                                           # for spectrum
+    #         self.write("INIT:CONT OFF")  # set in single sweep mode
+    #         self.write("INIT:IMM")
+    #     elif value == "WAV":
+    #         self.write('INST:SEL BASIC')
+    #         self.write('CONF:WAV')
+    #         self.write("SENS:WAV:IFP WIDE")  # set the wide bandWidth 80MHz
+    #                                           # for timedomain
+    #         self.write("SENS:WAV:AVER OFF")  # set the average off
+    #                                           # for timedomain
+    #         self.write("SENS:WAV:ADC:DITHER OFF")  # dither signal off
+    #         self.write("INIT:CONT OFF")  # set in single sweep mode
+    #         self.write("INIT:IMM")
+    #     else:
+    #         self.write('INST:SEL SA')
 
     @instrument_property
     @secure_communication()
@@ -242,7 +181,7 @@ class AgilentPSA(VisaInstrument):
             if freq:
                 return float(freq)/1e9
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     start frequency'''))
         elif self.mode == 'SPEC':
             if not self.spec_header.initialized:
@@ -251,7 +190,7 @@ class AgilentPSA(VisaInstrument):
             return self.spec_header.Firstfreq
 
         else:
-            raise '''PSA is not in the appropriate mode to get correctly the
+            raise '''PXA is not in the appropriate mode to get correctly the
                     start frequency'''
 
     @start_frequency_SA.setter
@@ -264,13 +203,13 @@ class AgilentPSA(VisaInstrument):
             result = self.query('FREQ:STAR?')
             if result:
                 if abs(float(result)/1e9 - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the start frequency'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     start frequency'''))
         else:
-            raise '''PSA is not in the appropriate mode to set correctly the
+            raise '''PXA is not in the appropriate mode to set correctly the
                     start frequency'''
 
     @instrument_property
@@ -283,11 +222,11 @@ class AgilentPSA(VisaInstrument):
             if freq:
                 return float(freq)/1e9
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     stop frequency'''))
 
         else:
-            raise '''PSA is not in the appropriate mode to get correctly the
+            raise '''PXA is not in the appropriate mode to get correctly the
                     stop frequency'''
 
     @stop_frequency_SA.setter
@@ -300,13 +239,13 @@ class AgilentPSA(VisaInstrument):
             result = self.query('FREQ:STOP?')
             if result:
                 if abs(float(result)/1e9 - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the stop frequency'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     stop frequency'''))
         else:
-            raise '''PSA is not in the appropriate mode to set correctly the
+            raise '''PXA is not in the appropriate mode to set correctly the
                     stop frequency'''
 
     @instrument_property
@@ -319,7 +258,7 @@ class AgilentPSA(VisaInstrument):
         if freq:
             return float(freq)/1e9
         else:
-            raise InstrIOError(cleandoc('''Agilent PSA did not return the
+            raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     center frequency'''))
 
     @center_frequency.setter
@@ -332,10 +271,10 @@ class AgilentPSA(VisaInstrument):
         result = self.query('FREQ:CENT?')
         if result:
             if abs(float(result)/1e9 - value)/value > 10**-12:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     center frequency'''))
         else:
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                     center frequency'''))
 
     @instrument_property
@@ -349,18 +288,18 @@ class AgilentPSA(VisaInstrument):
             if freq:
                 return float(freq)/1e9
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     span frequency'''))
         elif self.mode == 'SA':
             freq = self.query('FREQ:SPAN?')
             if freq:
                 return float(freq)/1e9
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     span frequency'''))
 
         else:
-            raise '''PSA is not in the appropriate mode to get correctly the
+            raise '''PXA is not in the appropriate mode to get correctly the
                     span frequency'''
 
     @span_frequency.setter
@@ -373,10 +312,10 @@ class AgilentPSA(VisaInstrument):
             result = self.query('FREQ:SPAN?')
             if result:
                 if abs(float(result)/1e9 - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the span frequency'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     span frequency'''))
 
         elif self.mode == 'SPEC':
@@ -384,14 +323,14 @@ class AgilentPSA(VisaInstrument):
             result = self.query('SENS:SPEC:FREQ:SPAN?')
             if result:
                 if abs(float(result)/1e9 - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the span frequency'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     span frequency'''))
 
         else:
-            raise '''PSA is not in the appropriate mode to set correctly the
+            raise '''PXA is not in the appropriate mode to set correctly the
                     span frequency'''
 
     @instrument_property
@@ -405,17 +344,17 @@ class AgilentPSA(VisaInstrument):
             if sweep:
                 return float(sweep)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     sweep time'''))
         elif self.mode == 'SA':
             sweep = self.query('SWEEP:TIME?')
             if sweep:
                 return float(sweep)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     sweep time'''))
         else:
-            raise '''PSA is not in the appropriate mode to get correctly the
+            raise '''PXA is not in the appropriate mode to get correctly the
                     sweep time'''
 
     @sweep_time.setter
@@ -429,23 +368,23 @@ class AgilentPSA(VisaInstrument):
             result = self.query('SENS:WAV:SWEEP:TIME?')
             if result:
                 if abs(float(result) - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the sweep time'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     sweep time'''))
         elif self.mode == 'SA':
             self.write('SWEEP:TIME {}'.format(value))
             result = self.query('SWEEP:TIME?')
             if result:
                 if abs(float(result) - value)/value > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the sweep time'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     sweep time'''))
         else:
-            raise '''PSA is not in the appropriate mode to set correctly the
+            raise '''PXA is not in the appropriate mode to set correctly the
                     sweep time'''
 
     @instrument_property
@@ -458,21 +397,21 @@ class AgilentPSA(VisaInstrument):
             if rbw:
                 return float(rbw)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     RBW'''))
         elif self.mode == 'SPEC':
             rbw = self.query('SENS:SPEC:BWIDTH?')
             if rbw:
                 return float(rbw)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     RBW'''))
         else:
             rbw = self.query('BWIDTH?')
             if rbw:
                 return float(rbw)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     channel Resolution bandwidth'''))
 
     @RBW.setter
@@ -485,10 +424,10 @@ class AgilentPSA(VisaInstrument):
             result = self.query('SENS:WAV:BWIDTH?')
             if result:
                 if abs(float(result) - value) > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the channel Resolution bandwidth'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Resolution bandwidth'''))
 
         elif self.mode == 'SPEC':
@@ -496,20 +435,20 @@ class AgilentPSA(VisaInstrument):
             result = self.query('SENS:SPEC:BWIDTH?')
             if result:
                 if abs(float(result) - value) > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the channel Resolution bandwidth'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Resolution bandwidth'''))
         else:
             self.write('BAND {}'.format(value))
             result = self.query('BWIDTH?')
             if result:
                 if abs(float(result) - value) > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the channel Resolution bandwidth'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Resolution bandwidth'''))
 
     @instrument_property
@@ -523,10 +462,10 @@ class AgilentPSA(VisaInstrument):
             if vbw:
                 return float(vbw)
             else:
-                raise InstrIOError(cleandoc('''Agilent PSA did not return the
+                raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     channel Video bandwidth'''))
         else:
-            raise '''PSA is not in the appropriate mode to set correctly the
+            raise '''PXA is not in the appropriate mode to set correctly the
                     sweep time'''
 
     @VBW_SA.setter
@@ -535,20 +474,20 @@ class AgilentPSA(VisaInstrument):
         """
         """
         if self.mode == 'WAV':
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Resolution bandwidth'''))
         elif self.mode == 'SPEC':
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Resolution bandwidth'''))
         else:
             self.write('BAND:VID {}'.format(value))
             result = self.query('BAND:VID?')
             if result:
                 if abs(float(result) - value) > 10**-12:
-                    raise InstrIOError(cleandoc('''PSA did not set correctly
+                    raise InstrIOError(cleandoc('''PXA did not set correctly
                     the channel Video bandwidth'''))
             else:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     channel Video bandwidth'''))
 
     @instrument_property
@@ -560,7 +499,7 @@ class AgilentPSA(VisaInstrument):
         if points:
             return int(points)
         else:
-            raise InstrIOError(cleandoc('''Agilent PSA did not return the
+            raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     sweep point number'''))
 
     @sweep_points_SA.setter
@@ -572,10 +511,10 @@ class AgilentPSA(VisaInstrument):
         result = self.query('SENSe:SWEep:POINts?')
         if result:
             if int(result) != value:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                     sweep point number'''))
         else:
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                     sweep point number'''))
 
     @instrument_property
@@ -587,7 +526,7 @@ class AgilentPSA(VisaInstrument):
         if count:
             return int(count)
         else:
-            raise InstrIOError(cleandoc('''Agilent PSA did not return the
+            raise InstrIOError(cleandoc('''Agilent PXA did not return the
                      average count'''))
 
     @average_count_SA.setter
@@ -599,10 +538,10 @@ class AgilentPSA(VisaInstrument):
         result = self.query('AVERage:COUNt?')
         if result:
             if int(result) != value:
-                raise InstrIOError(cleandoc('''PSA did not set correctly the
+                raise InstrIOError(cleandoc('''PXA did not set correctly the
                      average count'''))
         else:
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                      average count'''))
 
     @instrument_property
@@ -614,7 +553,7 @@ class AgilentPSA(VisaInstrument):
         if mode:
             return mode
         else:
-            raise InstrIOError(cleandoc('''Agilent PSA did not return the
+            raise InstrIOError(cleandoc('''Agilent PXA did not return the
                     average state'''))
 
     @average_state_SA.setter
@@ -626,5 +565,5 @@ class AgilentPSA(VisaInstrument):
         result = self.query('AVERage?')
 
         if result.lower() != value.lower()[:len(result)]:
-            raise InstrIOError(cleandoc('''PSA did not set correctly the
+            raise InstrIOError(cleandoc('''PXA did not set correctly the
                 average state'''))

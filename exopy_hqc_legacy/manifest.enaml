@@ -130,6 +130,20 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
                     Driver:
+                        driver = 'agilent_pxa:AgilentPXA'
+                        model = 'PXA'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+                    Driver:
+                        driver = 'agilent_psa:AgilentPSA'
+                        model = 'PSA'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+                    Driver:
                         driver = 'agilent_psg_signal_generators:AgilentPSG'
                         serie = 'PSG'
                         model = 'E8257D'
@@ -504,6 +518,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                     view = 'views.pna_task_views:ZNBGetTraceView'
                     instruments = ['exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24']
+                Task:
+                    task = 'psa_tasks:PSAGetTrace'
+                    view = 'views.psa_tasks_views:PSAGetTraceView'
+                    instruments = ['exopy_hqc_legacy.Legacy.AgilentPSA',
+                                   'exopy_hqc_legacy.Legacy.AgilentPXA']
                 Task:
                     task = 'dc_tasks:SetDCVoltageTask'
                     view = 'views.dc_views:SetDcVoltageView'
