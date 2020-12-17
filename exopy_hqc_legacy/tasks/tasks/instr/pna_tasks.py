@@ -15,7 +15,7 @@ import numbers
 from inspect import cleandoc
 
 import numpy as np
-from atom.api import (Str, Int, Bool, Enum, set_default,
+from atom.api import (Unicode, Int, Bool, Enum, set_default,
                       Value, List)
 
 from exopy.tasks.api import InstrumentTask, TaskInterface, validators
@@ -122,6 +122,9 @@ class PNASetRFPowerInterface(TaskInterface):
         self.channel_driver.port = self.port
         self.channel_driver.power = power
         task.write_in_database('power', power)
+
+        if task.auto_start:
+            task.driver.output = 'On'
 
     def check(self, *args, **kwargs):
         """Ensure the presence of the requested channel.
@@ -293,16 +296,16 @@ class PNASweepTask(SingleChannelPNATask):
     channel = Int(1).tag(pref=True)
 
     #: Start value for the sweep.
-    start = Str().tag(pref=True, feval=FEVAL)
+    start = Unicode().tag(pref=True, feval=FEVAL)
 
     #: Stop value for the sweep.
-    stop = Str().tag(pref=True, feval=FEVAL)
+    stop = Unicode().tag(pref=True, feval=FEVAL)
 
     #: Number of points desired in the sweep.
-    points = Str().tag(pref=True, feval=FEVAL)
+    points = Unicode().tag(pref=True, feval=FEVAL)
 
     #: Kind of sweep to perform.
-    sweep_type = Enum('', 'Frequency', 'Power', 'CW').tag(pref=True)
+    sweep_type = Enum('', 'Frequency', 'Power').tag(pref=True)
 
     #: Measures to perform.
     measures = List().tag(pref=True)
@@ -378,7 +381,7 @@ class PNASweepTask(SingleChannelPNATask):
         while not self.driver.check_operation_completion():
             time.sleep(0.1*waiting_time)
 
-        data = [self.channel_driver.sweep_x_axis]
+        data = [np.linspace(start, stop, points)]
         for i, meas_name in enumerate(meas_names):
             if self.measures[i][1]:
                 data.append(
@@ -425,7 +428,7 @@ class PNAGetTraces(InstrumentTask):
 
     """
     #: Traces to get.
-    tracelist = Str('1,1').tag(pref=True)
+    tracelist = Unicode('1,1').tag(pref=True)
 
     #: Should the data be measured first.
     already_measured = Bool(False).tag(pref=True)
