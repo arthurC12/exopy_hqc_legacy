@@ -6,6 +6,7 @@ ExopyHqcLegacy Changelog
 
 - fix passing average value when retrying data retrieval on AQD14 driver
 - remove conversion from HQCMeas
+- Fix bug in saveHDF5Task when saving complex record arrays
 
 0.1.0 - 15/02/2018
 ------------------
