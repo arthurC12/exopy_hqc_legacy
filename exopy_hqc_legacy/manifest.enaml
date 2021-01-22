@@ -494,7 +494,12 @@ enamldef HqcLegacyManifest(PluginManifest):
                         interface = 'anapico_tasks:AnapicoSetChannelInterface'
                         views = ['views.anapico_task_views:IAnapicoChannelLabel',
                                  'views.anapico_task_views:IAnapicoChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']                                   
+                        instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
+                Task:
+                    task = 'rf_tasks:SetRFPhaseTask'
+                    view = 'views.rf_views:RFPhaseView'
+                    instruments = ['exopy_hqc_legacy.Legacy.AgilentPSG']
+                    metadata = {'loopable': True}
                 Task:
                     task = 'pna_tasks:PNASinglePointMeasureTask'
                     view = 'views.pna_task_views:PNASinglePointView'
