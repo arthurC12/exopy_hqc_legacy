@@ -22,9 +22,13 @@ import numpy as np
 
 from ..dll_tools import DllInstrument
 from ..driver_tools import InstrIOError
+import sys
 
-# get dll
-sa_dll = ctypes.CDLL('sa_api.dll')
+# to get the sa_api DLL imported, one should add th pathe C:\\Program Files\\Signal Hound\\Spike to the os environ path
+# pastr = "C:\Program Files\Signal Hound\Spike"
+# os.environ['PATH'] += ";" + pastr
+
+sa_dll = ctypes.CDLL("sa_api.dll")
 
 SA_TRUE  = 1
 SA_FALSE = 0
@@ -402,6 +406,9 @@ class SA124B(DllInstrument):
     ''' Driver for SA124B Signal Hound spectrum analyzer
 
     '''
+    
+    library = 'sa_api.dll'
+    
     def __init__(self, connection_infos, mode=SA_SWEEPING,
                  caching_allowed=True,
                  caching_permissions={}, auto_open=True):

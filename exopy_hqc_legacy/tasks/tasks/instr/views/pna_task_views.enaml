@@ -163,6 +163,8 @@ def label_maker(label, mode):
             return 'CW Frequency (Hz)'
         else:
             return '(discarded field)'
+    else:
+        return ''
 
 
 enamldef PNASweepMeasView(InstrView): view:

@@ -222,6 +222,35 @@ class Anapico(VisaInstrument):
             mess = fill(cleandoc('''The invalid value {} was sent to
                         switch_on_off method''').format(value), 80)
             raise VisaTypeError(mess)
+            
+    @instrument_property
+    @secure_communication()
+    def reference(self):
+        """Reference source.
+
+        """
+        ref = self.ask('ROSC:SOUR?')
+        if ref:
+            return ref
+        else:
+            raise InstrIOError
+
+    @reference.setter
+    @secure_communication()
+    def reference(self, value):
+        """Reference source setter method.
+           Can be INTernal or EXTernal.
+
+        """
+        if value in ['INT', 'EXT']:
+            self.write('ROSC:SOUR {}'.format(value))
+            result = self.ask('ROSC:SOUR?')
+            if result != value:
+                raise InstrIOError(cleandoc('''reference not set properly'''))
+        else:
+            raise InstrIOError(cleandoc('''reference should be INT or EXT.
+                                        {} given instead'''.format(value)))
+        
 
 class AnapicoMulti(Anapico):
     """
