@@ -24,6 +24,7 @@ class RunAWGTask(InstrumentTask):
     #: Switch to choose the AWG run mode: on or off
     switch = Str('Off').tag(pref=True)
 
+    #: Delay before setting the AWG. Useful when loading large sequences
     delay = Float(0).tag(pref=True)
 
     database_entries = set_default({'output': 0})
