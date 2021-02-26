@@ -552,6 +552,9 @@ class SaveFileHDF5Task(SimpleTask):
     #: This helps h5py to chunk the file appropriately
     calls_estimation = Str('1').tag(pref=True, feval=VAL_REAL)
 
+    #: Do the data need to be reshape according to user shape
+    reshape_loop = Bool(False).tag(pref=True)
+
     #: Flag indicating whether or not the data should be saved in swmr mode
     swmr = Bool(True).tag(pref=True)
 
@@ -617,8 +620,8 @@ class SaveFileHDF5Task(SimpleTask):
                     if names:
                         for m in names:
                             f.create_dataset(label + '_' + m,
-                                             (calls_estimation,) + value[m].shape,
-                                             (None, ) + value[m].shape,
+                                             shape_loop + value[m].shape,
+                                             shape_max+ value[m].shape,
                                              self.datatype,
                                              self.compression)
                             ordered_keys.append(label+'_'+m)
@@ -636,6 +639,8 @@ class SaveFileHDF5Task(SimpleTask):
                     
             f.attrs['header'] = self.format_string(self.header)
             f.attrs['count_calls'] = 0
+            f.attrs['reshape_loop'] = self.reshape_loop
+            f.attrs['ordered_keys'] = str(ordered_keys)
             if self.swmr:
                 f.swmr_mode = True
             f.flush()

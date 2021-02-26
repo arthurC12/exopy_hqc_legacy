@@ -64,12 +64,6 @@ enamldef SetDcVoltageView(InstrView): view:
     FloatField: safe_val:
         resist_width = 'ignore'
         value := task.safe_max
-        
-    Label: delta:
-        text = 'Safe Delta (V)'
-    FloatField: delta_val:
-        resist_width = 'ignore'
-        value := task.safe_delta
 
     Label: delta:
         text = 'Safe Delta (V)'
