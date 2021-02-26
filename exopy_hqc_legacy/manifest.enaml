@@ -155,7 +155,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                         kind = 'DC source'
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
                                        'VisaRS232':
-                                           {'resource_class': 'INSTR'}
+                                           {'resource_class': 'INSTR'},
+                                       'VisaRaw': {}
                                        }
                 Drivers:
                     manufacturer = 'Keithley'
@@ -388,7 +389,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     view = 'views.rf_views:RFFrequencyView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPSG',
                                    'exopy_hqc_legacy.Legacy.AnritsuMG3694',
-                                   'exopy_hqc_legacy.Legacy.LabBrickLMS103',
+                                   'exopy_qcircuits.Qcircuits.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico']
                     metadata = {'loopable': True}
@@ -414,7 +415,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     view = 'views.rf_views:RFPowerView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPSG',
                                    'exopy_hqc_legacy.Legacy.AnritsuMG3694',
-                                   'exopy_hqc_legacy.Legacy.LabBrickLMS103',
+                                   'exopy_qcircuits.Qcircuits.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico']
                     metadata = {'loopable': True}
@@ -510,9 +511,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'MultiChannelVoltageSourceIChannel']
                         instruments = ['exopy_hqc_legacy.Legacy.TinyBilt']
                 Task:
+                    task = 'dc_tasks:GetDCVoltageTask'
+                    view = 'views.dc_views:GetDcVoltageView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651']
+                    metadata = {'loopable': True}
+                Task:
                     task = 'dc_tasks:SetDCCurrentTask'
                     view = 'views.dc_views:SetDcCurrentView'
-                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200']
+                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
+                                    'exopy_hqc_legacy.Legacy.Yokogawa7651']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCFunctionTask'

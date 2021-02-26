@@ -282,6 +282,9 @@ class SaveFileTask(SimpleTask):
     #: Flag indicating whether or not initialisation has been performed.
     initialized = Bool(False)
 
+    #: Name of a previously used save file
+    old_file = Str()
+
     #: Column indices identified as arrays. Use to save 2D arrays in
     #: concatenated columns.
     array_values = Value()
@@ -297,6 +300,18 @@ class SaveFileTask(SimpleTask):
         """ Collect all data and write them to file.
 
         """
+        # these lines allow us to have multiple calls of save_file to different
+        # .csv in the same .ini
+        if not self.format_string(self.old_file):
+            self.initialized = False
+            self.old_file = self.format_string(self.filename)
+        elif self.format_string(self.old_file) == self.format_string(self.filename):
+            self.initialized = True
+        else:
+            self.file_object.close()
+            self.initialized = False
+            self.old_file = self.format_string(self.filename)
+            
         # Initialisation.
         if not self.initialized:
 
@@ -357,7 +372,6 @@ class SaveFileTask(SimpleTask):
                            "dimension. Save file in HDF5 format.")
                     log.error(msg.format(self.name))
                     self.root.should_stop.set()
-
         if shapes_1D:
             if len(shapes_1D) > 1:
                 log = logging.getLogger()
@@ -479,11 +493,19 @@ class _HDF5File(h5py.File):
 
     """
 
-    def close(self):
-        for dataset in self.keys():
-            oldshape = self[dataset].shape
-            newshape = (self.attrs['count_calls'], ) + oldshape[1:]
-            self[dataset].resize(newshape)
+    def close(self,):
+        if not self.attrs['reshape_loop']:
+            for dataset in self.keys():
+                oldshape = self[dataset].shape
+                if self.attrs['count_calls']>1:
+                    newshape = (self.attrs['count_calls'], ) + oldshape[1:]
+                    self[dataset].resize(newshape)
+                else:
+                    # give up the first dimension when there it's only 1
+                    newshape = oldshape[1:]
+                    data = self[dataset][0]
+                    del self[dataset]
+                    super(_HDF5File, self).create_dataset(dataset, data=data)
         super(_HDF5File, self).close()
 
     def create_dataset(self, name, shape, maximumshape, datatype, compress):
@@ -521,7 +543,7 @@ class SaveFileHDF5Task(SimpleTask):
                                                     ordered_dict_from_pref))
 
     #: Data type (float16, float32, etc.)
-    datatype = Enum('float16', 'float32', 'float64').tag(pref=True)
+    datatype = Enum('int', 'float16', 'float32', 'float64').tag(pref=True)
 
     #: Compression type of the data in the HDF5 file
     compression = Enum('None', 'gzip').tag(pref=True)
@@ -532,6 +554,15 @@ class SaveFileHDF5Task(SimpleTask):
 
     #: Flag indicating whether or not the data should be saved in swmr mode
     swmr = Bool(True).tag(pref=True)
+
+    #: For some measures it is useful to skip the checks for this task
+    skip_checks = Bool(False).tag(pref=True)
+
+    #: For some measures it is useful to reinitialise the file each time the task is called
+    new_file = Bool(False).tag(pref=True)
+
+    #: Wanted shape of the user
+    shape_loop = Str('()').tag(pref=True)
 
     #: Flag indicating whether or not initialisation has been performed.
     initialized = Bool(False)
@@ -546,9 +577,16 @@ class SaveFileHDF5Task(SimpleTask):
         """
 
         calls_estimation = self.format_and_eval_string(self.calls_estimation)
-
+        if self.reshape_loop:
+            shape_loop = tuple(self.format_and_eval_string(self.shape_loop))
+            shape_max = shape_loop
+            # if the user gives the shape of the array, we assume it gives the 
+            # correct size, 
+        else:
+            shape_loop = (calls_estimation,)
+            shape_max = (None,)
         # Initialisation.
-        if not self.initialized:
+        if self.new_file or not self.initialized :
 
             self._formatted_labels = []
             full_folder_path = self.format_string(self.folder)
@@ -569,6 +607,7 @@ class SaveFileHDF5Task(SimpleTask):
             self.root.resources['files'][full_path] = self.file_object
 
             f = self.file_object
+            ordered_keys = []
             for l, v in self.saved_values.items():
                 label = self.format_string(l)
                 self._formatted_labels.append(label)
@@ -582,15 +621,19 @@ class SaveFileHDF5Task(SimpleTask):
                                              (None, ) + value[m].shape,
                                              self.datatype,
                                              self.compression)
+                            ordered_keys.append(label+'_'+m)
                     else:
                         f.create_dataset(label,
-                                         (calls_estimation,) + value.shape,
-                                         (None, ) + value.shape,
+                                         shape_loop + value.shape,
+                                         shape_max + value.shape,
                                          self.datatype,
                                          self.compression)
+                        ordered_keys.append(label)
                 else:
-                    f.create_dataset(label, (calls_estimation,), (None,),
+                    f.create_dataset(label, shape_loop, shape_max,
                                      self.datatype, self.compression)
+                    ordered_keys.append(label)
+                    
             f.attrs['header'] = self.format_string(self.header)
             f.attrs['count_calls'] = 0
             if self.swmr:
@@ -601,12 +644,16 @@ class SaveFileHDF5Task(SimpleTask):
 
         f = self.file_object
         count_calls = f.attrs['count_calls']
-
-        if not (count_calls % calls_estimation):
-            for dataset in f.keys():
-                oldshape = f[dataset].shape
-                newshape = (oldshape[0] + calls_estimation, ) + oldshape[1:]
-                f[dataset].resize(newshape)
+        if not self.reshape_loop:
+            if not (count_calls % calls_estimation):
+                for dataset in f.keys():
+                    oldshape = f[dataset].shape
+                    newshape = (oldshape[0] + calls_estimation, ) + oldshape[1:]
+                    f[dataset].resize(newshape)
+        if self.reshape_loop:
+            index = numpy.unravel_index(count_calls, shape_loop)
+        else:
+            index = count_calls
 
         labels = self._formatted_labels
         for i, v in enumerate(self.saved_values.values()):
@@ -615,11 +662,11 @@ class SaveFileHDF5Task(SimpleTask):
                 names = value.dtype.names
                 if names:
                     for m in names:
-                        f[labels[i] + '_' + m][count_calls] = value[m]
+                        f[labels[i] + '_' + m][index] = value[m]
                 else:
-                    f[labels[i]][count_calls] = value
+                    f[labels[i]][index] = value
             else:
-                f[labels[i]][count_calls] = value
+                f[labels[i]][index] = value
 
         f.attrs['count_calls'] = count_calls + 1
         f.flush()
@@ -630,6 +677,10 @@ class SaveFileHDF5Task(SimpleTask):
         """
         err_path = self.get_error_path()
         test, traceback = super(SaveFileHDF5Task, self).check(*args, **kwargs)
+
+        if self.skip_checks:
+            return test, traceback
+
         try:
             full_folder_path = self.format_string(self.folder)
             filename = self.format_string(self.filename)

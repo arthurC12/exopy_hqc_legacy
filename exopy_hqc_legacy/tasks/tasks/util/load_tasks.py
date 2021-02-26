@@ -19,12 +19,15 @@ from past.builtins import basestring
 from exopy.tasks.api import SimpleTask, InterfaceableTaskMixin, TaskInterface
 
 
-def _make_array(names, dtypes='f8'):
+def _make_array(names, dtypes='f8', data=None):
     if isinstance(dtypes, basestring):
         dtypes = [dtypes for i in range(len(names))]
 
     dtype = {'names': names, 'formats': dtypes}
-    return np.ones((5,), dtype=dtype)
+    if data is None:
+        data = 1e-1*np.ones((50,))
+    data = data.astype(dtype)
+    return data
 
 
 class LoadArrayTask(InterfaceableTaskMixin, SimpleTask):
