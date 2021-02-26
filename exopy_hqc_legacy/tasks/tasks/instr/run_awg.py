@@ -22,10 +22,9 @@ class RunAWGTask(InstrumentTask):
 
     """
     #: Switch to choose the AWG run mode: on or off
-    switch = Str('Off').tag(pref=True, feval=validators.SkipLoop())
+    switch = Str('Off').tag(pref=True)
 
-    delay = Float(0).tag(pref=True,
-                         feval=validators.SkipLoop(types=numbers.Real))
+    delay = Float(0).tag(pref=True)
 
     database_entries = set_default({'output': 0})
 
