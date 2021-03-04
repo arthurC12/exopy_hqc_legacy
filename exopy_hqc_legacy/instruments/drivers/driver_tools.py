@@ -104,7 +104,7 @@ class instrument_property(property):
             super(instrument_property, self).__set__(obj, value)
 
 
-def secure_communication(max_iter=2):
+def secure_communication(max_iter=5):
     """Decorator making sure that a communication error cannot simply be
     resolved by attempting again to send a message.
 
@@ -191,17 +191,28 @@ class InstrJob(object):
                               (time.time() - self._start_time))
             if remaining_time < 0:
                 break
+            log = logging.getLogger(__name__)
+            msg = ('Sleeping for %s')
+            log.info(msg,min(refresh_time, remaining_time))
             time.sleep(min(refresh_time, remaining_time))
             if break_condition_callable():
                 return False
 
         if self.condition_callable():
             return True
-
+            
+        log = logging.getLogger(__name__)
+        msg = ('Job should be finished, but it is not, wait additional timeout of %s s')
+        log.info(msg,timeout)
         timeout_start = time.time()
         while True:
             remaining_time = (timeout -
                               (time.time() - timeout_start))
+            if remaining_time>0:
+                log = logging.getLogger(__name__)
+                msg = ('Sleeping for %s')
+                log.info(msg,min(refresh_time, remaining_time))
+                time.sleep(min(refresh_time, remaining_time))
             if self.condition_callable():
                 return True
             if remaining_time < 0 or break_condition_callable():

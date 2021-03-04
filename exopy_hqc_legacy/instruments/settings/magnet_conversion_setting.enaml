@@ -13,12 +13,12 @@ import os
 
 from enaml.widgets.api import Label
 from enaml.stdlib.fields import FloatField
-from enaml.layout.api import hbox
+from enaml.layout.api import hbox, vbox
 from exopy.instruments.api import BaseSettings
 
 
 enamldef MagnetConversionSetting(BaseSettings):
-    """Field to amp conversion settings for magnet sources.
+    """Field to amp, lower limit conversion settings for magnet sources.
 
     """
     #: Reference to the workbench.
@@ -27,18 +27,35 @@ enamldef MagnetConversionSetting(BaseSettings):
     #: Current to field conversion ratio.
     alias magnet_conversion : conversion_val.text
 
+    #: Lower field limit.
+    alias lower_field_limit : lowerlimit_val.text
+
     gather_infos => ():
         settings = BaseSettings.gather_infos(self)
         settings['magnet_conversion'] = magnet_conversion
+        settings['lower_field_limit'] = lower_field_limit
         return settings
-
-    constraints = [hbox(conversion_lab, conversion_val, units)]
+    
+    constraints = [
+        vbox(
+            hbox(conversion_lab, conversion_val, conversion_units),
+            hbox(lfl_lab, lowerlimit_val, lowerlimit_units)),
+    ]
 
     Label: conversion_lab:
         text = 'Conversion factor'
-    Label: units:
+    Label: conversion_units:
         text = 'T/A'
     FloatField: conversion_val:
         enabled << not read_only
         tool_tip = ('A conversion factor, dependant on the '
         	        'magnet used need to be specified.')
+
+    Label: lfl_lab:
+        text = 'Lower field value'
+    Label: lowerlimit_units:
+        text = 'T'
+    FloatField: lowerlimit_val:
+        enabled << not read_only
+        tool_tip = ('Maximum field allowed in  coil, dependant on the '
+                    'magnet used need to be specified.')

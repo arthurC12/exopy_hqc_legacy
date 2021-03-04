@@ -11,6 +11,7 @@
 """
 from inspect import cleandoc
 from time import sleep
+import logging
 
 from ..driver_tools import (InstrIOError, secure_communication,
                             instrument_property, InstrJob)
@@ -32,12 +33,14 @@ class CS4(VisaInstrument):
     #: Typical fluctuations at the output of the instrument.
     #: We use a class variable since we expect this to be identical for all
     #: instruments.
-    OUTPUT_FLUCTUATIONS = 2e-4
+    OUTPUT_FLUCTUATIONS = 3e-4
 
     caching_permissions = {'heater_state': True,
                            'target_field': True,
                            'sweep_rate_field': True,
                            }
+
+    log_prefix= 'CS4 Driver: '
 
     def __init__(self, connection_info, caching_allowed=True,
                  caching_permissions={}, auto_open=True):
@@ -46,53 +49,85 @@ class CS4(VisaInstrument):
         try:
             mc = connection_info['magnet_conversion']
             self.field_current_ratio = float(mc)
+            log = logging.getLogger(__name__)
+            msg = ('Field current ratio is %s T/A')
+            log.info(self.log_prefix+msg,float(mc))
         except KeyError:
             raise InstrIOError(cleandoc('''The field to current ratio
                  of the currently used magnet need to be specified in
                  the instrument settings. One should also check that
                  the switch heater current is correct.'''))
-
+        try:
+            lfl = connection_info['lower_field_limit']
+            self.lower_field_limit = float(lfl)
+            log = logging.getLogger(__name__)
+            msg = ('Lower field limit is %s T')
+            log.info(self.log_prefix+msg,float(lfl))
+        except KeyError:
+            raise InstrIOError(cleandoc('''The lower field limit
+                 of the currently used magnet need to be specified in
+                 the instrument settings. One should also check that
+                 the switch heater current is correct.'''))
+                         
         if 'output_fluctuations' in connection_info:
             self.output_fluctuations = connection_info['output_fluctuations']
         else:
             self.output_fluctuations = self.OUTPUT_FLUCTUATIONS
 
-    def open_connection(self, **para):
-        """Open the connection and set up the parameters.
-
-        """
-        super(CS4, self).open_connection(**para)
-        if not para:
-            self.write_termination = '\n'
-            self.read_termination = '\n'
-
         # Setup the correct unit and range.
         self.write('UNITS T')
-        self.write('RANGE 0 100;')  # HINT the CG4 requires the ;
+        self.write('RANGE 0 50;')  # HINT the CG4 requires the ;
         # we'll only use the command sweep up (ie to upper limit)
         # however upper limit can't be lower than lower limit for
         # some sources : G4 for example
         # set lower limit to lowest value
-        self.write('LLIM -7')
+        self.write('LLIM {}'.format(self.lower_field_limit))
+
+    def open_connection(self, **para):
+        """Open the connection and set up the parameters.
+
+        """
+
+        log = logging.getLogger(__name__)
+        msg = ('Establihing a connection with cs4')
+        log.info(self.log_prefix+msg)
+
+        super(CS4, self).open_connection(**para)
+        if not para:
+            self.write_termination = '\n'
+            self.read_termination = '\n'
 
     @secure_communication()
     def read_output_field(self):
         """Read the current value of the output field.
 
         """
-        return float(self.query('IOUT?').strip(' T'))
+        log = logging.getLogger(__name__)
+        msg = ('Reading output field ...')
+        log.info(self.log_prefix+msg)
+        reading_field = float(self.query('IOUT?').strip(' T'))
+        log = logging.getLogger(__name__)
+        msg = ('... %s T')
+        log.info(self.log_prefix+msg,reading_field)
+        return reading_field
 
     @secure_communication()
     def read_persistent_field(self):
         """Read the current value of the persistent field.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Reading persistent field')
+        log.info(self.log_prefix+msg)
         return float(self.query('IMAG?').strip(' T'))
 
     def is_target_reached(self):
         """Check whether the target field has been reached.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Assessing completion')
+        log.info(self.log_prefix+msg)
         return (abs(self.read_output_field() - self.target_field) <
                 self.output_fluctuations)
 
@@ -102,6 +137,9 @@ class CS4(VisaInstrument):
         Once the value is reached one can safely turn on the switch heater.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Going to permanent field')
+        log.info(self.log_prefix+msg)
         return self.sweep_to_field(self.read_persistent_field())
 
     def sweep_to_field(self, value, rate=None):
@@ -114,6 +152,9 @@ class CS4(VisaInstrument):
         rate = (self.field_sweep_rate if self.heater_state == 'On' else
                 self.fast_sweep_rate)
 
+        log = logging.getLogger(__name__)
+        msg = ('Preparing sweep')
+        log.info(self.log_prefix+msg)
         # Start ramping.
         self.target_field = value
         self.activity = 'To set point'
@@ -121,6 +162,9 @@ class CS4(VisaInstrument):
         # Create job.
         span = abs(self.read_output_field() - value)
         wait = 60 * span / rate
+        log = logging.getLogger(__name__)
+        msg = ('Starting sweep, with wait of %s s')
+        log.info(self.log_prefix+msg,wait)
         job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep)
         return job
 
@@ -128,6 +172,9 @@ class CS4(VisaInstrument):
         """Stop the field sweep at the current value.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Stopping sweep')
+        log.info(self.log_prefix+msg)
         self.activity = 'Hold'
 
     def check_connection(self):
@@ -140,6 +187,9 @@ class CS4(VisaInstrument):
         coil.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Ask heater state (instr prop)')
+        log.info(self.log_prefix+msg)
         heat = self.query('PSHTR?').strip()
         try:
             return _GET_HEATER_DICT[heat]
@@ -150,6 +200,9 @@ class CS4(VisaInstrument):
     @secure_communication()
     def heater_state(self, state):
         if state in ['On', 'Off']:
+            log = logging.getLogger(__name__)
+            msg = ('Write heater state (instr prop)')
+            log.info(self.log_prefix+msg)
             self.write('PSHTR {}'.format(state))
             sleep(1)
 
@@ -160,6 +213,9 @@ class CS4(VisaInstrument):
 
         """
         # converted from A/s to T/min
+        log = logging.getLogger(__name__)
+        msg = ('Ask A/s rate (instr prop)')
+        log.info(self.log_prefix+msg)
         rate = float(self.query('RATE? 0'))
         return rate * (60 * self.field_current_ratio)
 
@@ -167,6 +223,9 @@ class CS4(VisaInstrument):
     @secure_communication()
     def field_sweep_rate(self, rate):
         # converted from T/min to A/s
+        log = logging.getLogger(__name__)
+        msg = ('Set A/s rate (instr prop)')
+        log.info(self.log_prefix+msg)
         rate /= 60 * self.field_current_ratio
         self.write('RATE 0 {}'.format(rate))
 
@@ -177,12 +236,18 @@ class CS4(VisaInstrument):
         (T/min).
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Ask fast rate (instr prop)')
+        log.info(self.log_prefix+msg)
         rate = float(self.query('RATE? 3'))
         return rate * (60 * self.field_current_ratio)
 
     @fast_sweep_rate.setter
     @secure_communication()
     def fast_sweep_rate(self, rate):
+        log = logging.getLogger(__name__)
+        msg = ('Set fast rate (instr prop)')
+        log.info(self.log_prefix+msg)
         rate /= 60 * self.field_current_ratio
         self.write('RATE 3 {}'.format(rate))
 
@@ -193,6 +258,9 @@ class CS4(VisaInstrument):
 
         """
         # in T
+        log = logging.getLogger(__name__)
+        msg = ('Ask field target (instr prop)')
+        log.info(self.log_prefix+msg)
         return float(self.query('ULIM?').strip(' T'))
 
     @target_field.setter
@@ -202,6 +270,9 @@ class CS4(VisaInstrument):
         at a rate depending on the intensity, as defined in the range(s).
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Set field target (instr prop)')
+        log.info(self.log_prefix+msg)
         self.write('ULIM {}'.format(target))
 
     @instrument_property
@@ -210,6 +281,9 @@ class CS4(VisaInstrument):
         """Last known value of the magnet field.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Ask persistent field (instr prop)')
+        log.info(self.log_prefix+msg)
         return float(self.query('IMAG?').strip(' T'))
 
     @instrument_property
@@ -218,6 +292,9 @@ class CS4(VisaInstrument):
         """Current activity of the power supply (idle, ramping).
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Ask activity (instr prop)')
+        log.info(self.log_prefix+msg)
         return self.query('SWEEP?').strip()
 
     @activity.setter
@@ -230,6 +307,9 @@ class CS4(VisaInstrument):
             else:
                 par += ' SLOW'
         if par:
+            log = logging.getLogger(__name__)
+            msg = ('Set activity (instr prop)')
+            log.info(self.log_prefix+msg)
             self.write('SWEEP ' + par)
         else:
             raise ValueError(cleandoc(''' Invalid parameter {} sent to

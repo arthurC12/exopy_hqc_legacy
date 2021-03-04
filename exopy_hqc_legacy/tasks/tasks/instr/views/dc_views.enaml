@@ -34,7 +34,8 @@ enamldef SetDcVoltageView(InstrView): view:
                    (step.width == step_val.width) | 'weak',
                    (step_val.width == safe_val.width),
                    (step_val.width == delta_val.width),
-                   (step_val.width == delay_val.width)]
+                   (step_val.width == delay_val.width),
+                   (step_val.width == wait_val.width)]
 
     Conditional:
         condition = not in_loop
@@ -72,6 +73,28 @@ enamldef SetDcVoltageView(InstrView): view:
     FloatField: delay_val:
         resist_width = 'ignore'
         value := task.delay
+
+    Label: wait:
+        text = 'Stabilisation (s)'
+    FloatField: wait_val:
+        resist_width = 'ignore'
+        value := task.stab_wait
+
+    Label: ramp:
+        text = 'Instr. ramp'
+    CheckBox: ramp_val:
+        checked := task.ramp_with_instr
+        tool_tip = fill('Check to enable the instrument '
+                        'to use its own ramp routine with '
+                        'value back step/delay',60)
+
+    Label: instrfeedback:
+        text = 'Instr. feedback'
+    CheckBox: wait_instr_feedback:
+        checked := task.wait_instr_feedback
+        tool_tip = fill('Check to ask the instrument '
+                        'to perform verification '
+                        'of its output value',60)
 
 
 enamldef MultiChannelVoltageSourceILabel(Label):
@@ -157,6 +180,12 @@ enamldef SetDcCurrentView(InstrView): view:
     FloatField: delay_val:
         resist_width = 'ignore'
         value := task.delay
+
+    Label: wait:
+        text = 'Stabilisation (s)'
+    FloatField: wait_val:
+        resist_width = 'ignore'
+        value := task.stab_wait
 
 enamldef SetDcFunctionView(InstrView): view:
     """View for the SetDCFunctionTask.

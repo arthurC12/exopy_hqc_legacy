@@ -11,8 +11,9 @@
 """
 import time
 import numbers
+import logging
 
-from atom.api import (Float, Value, Str, Int, set_default, Tuple)
+from atom.api import (Float, Value, Str, Int, Bool, set_default, Tuple)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
@@ -23,6 +24,7 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
 
     The user can choose to limit the rate by choosing an appropriate back step
     (larger step allowed), and a waiting time between each step.
+    Also, the ramp can be done by the instrument itself according to 
 
     """
     #: Target value for the source (dynamically evaluated)
@@ -40,8 +42,25 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     #: Time to wait between changes of the output of the instr.
     delay = Float(0.01).tag(pref=True)
 
+    #: Time to wait after setting voltage for source stabilisation
+    stab_wait = Float(0.01).tag(pref=True)
+
+    #: Whether to rely on internal instrument function for backstep and delay ramp
+    ramp_with_instr = Bool(False).tag(pref=True)
+
+    #: Whether to wait for source checking its output
+    wait_instr_feedback = Bool(False).tag(pref=True)
+
     parallel = set_default({'activated': True, 'pool': 'instr'})
-    database_entries = set_default({'voltage': 0.01})
+    database_entries = set_default({'voltage': 0.01 })
+
+    log_prefix= 'Set DC voltage task: '
+
+    def check_for_interruption(self):
+        """Check if the user required an interruption.
+
+        """
+        return self.root.should_stop.is_set()
 
     def i_perform(self, value=None):
         """Default interface.
@@ -55,10 +74,70 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
                        'output a voltage')
                 raise ValueError(msg.format(self.name))
 
-        setter = lambda value: setattr(self.driver, 'voltage', value)
         current_value = getattr(self.driver, 'voltage')
+        if self.ramp_with_instr:
+            success = self.instr_set(value, self.driver.smooth_change, current_value)
+        else:    
+            setter = lambda value: setattr(self.driver, 'voltage', value)
+            success = self.smooth_set(value, setter, current_value)
+        self.instr_wait()
+        if success == True:
+            if self.wait_instr_feedback:
+                success == self.driver.without_errors()
+        if success == False:
+            raise InstrError(msg.format(self.name))
+        
 
-        self.smooth_set(value, setter, current_value)
+    def instr_set(self, target_value, setter, current_value):
+        """ Smoothly set the voltage relying on instrument ramp.
+
+        target_value : float
+            Voltage to reach.
+
+        setter : callable
+            Function to set the voltage, should take as single argument the
+            value.
+
+        """
+        if target_value is not None:
+            value = target_value
+        else:
+            value = self.format_and_eval_string(self.target_value)
+
+        if self.safe_max and self.safe_max < abs(value):
+            msg = 'Requested voltage {} exceeds safe max : {}'
+            raise ValueError(msg.format(value, self.safe_max))
+
+        last_value = current_value
+        normal_end = True
+
+        if abs(last_value - value) < 1e-12:
+            self.write_in_database('voltage', value)
+            return True
+
+        elif self.back_step == 0:
+            msg = 'Requested backstep {} with ramp cannot be 0'
+            raise ValueError(msg.format(self.back_step))
+
+        elif self.delay == 0:
+            msg = 'Requested delay {} with ramp cannot be 0'
+            raise ValueError(msg.format(self.delay))
+
+        if not self.root.should_stop.is_set():
+            job = setter(last_value, value, self.back_step, self.delay)
+            normal_end = job.wait_for_completion(self.check_for_interruption,
+                                                 timeout=2,
+                                                 refresh_time=0.1)
+            if normal_end:
+                self.driver.prev_target=value
+                self.write_in_database('voltage', value)
+                return True
+            if not normal_end:
+                job.cancel()
+                return False
+        
+        self.write_in_database('voltage', last_value)
+        return False
 
     def smooth_set(self, target_value, setter, current_value):
         """ Smoothly set the voltage.
@@ -91,12 +170,12 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
 
         if abs(last_value - value) < 1e-12:
             self.write_in_database('voltage', value)
-            return
+            return True
 
         elif self.back_step == 0:
             self.write_in_database('voltage', value)
             setter(value)
-            return
+            return True
 
         else:
             if (value - last_value)/self.back_step > 0:
@@ -109,18 +188,23 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
                 # Avoid the accumulation of rounding errors
                 last_value = round(last_value + step, 9)
                 setter(last_value)
-                if abs(value-last_value) > abs(step):
-                    time.sleep(self.delay)
-                else:
+                time.sleep(self.delay)
+                if not abs(value-last_value) > abs(step):
                     break
 
         if not self.root.should_stop.is_set():
             setter(value)
             self.write_in_database('voltage', value)
-            return
+            return True
 
         self.write_in_database('voltage', last_value)
+        return True
 
+    def instr_wait(self):
+        """ Implements stabilization wait
+
+        """
+        time.sleep(self.stab_wait)
 
 class MultiChannelVoltageSourceInterface(TaskInterface):
     """Interface for multiple outputs sources.
@@ -146,11 +230,18 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
                 msg = ('Instrument output assigned to task {} is not '
                        'configured to output a voltage')
                 raise ValueError(msg.format(self.name))
-
-        setter = lambda value: setattr(self.channel_driver, 'voltage', value)
         current_value = getattr(self.channel_driver, 'voltage')
-
-        task.smooth_set(value, setter, current_value)
+        if task.ramp_with_instr:
+            success = task.instr_set(value, self.channel_driver.smooth_change, current_value)
+        else:    
+            setter = lambda value: setattr(self.channel_driver, 'voltage', value)
+            success = task.smooth_set(value, setter, current_value)
+        task.instr_wait()
+        if success == True:
+            if task.wait_instr_feedback:
+                success == self.channel_driver.without_errors()
+        if success == False:
+            raise InstrError('Task did not complete')
 
     def check(self, *args, **kwargs):
         if kwargs.get('test_instr'):
@@ -190,6 +281,9 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
 
     #: Time to wait between changes of the output of the instr.
     delay = Float(0.01).tag(pref=True)
+
+    #: Time to wait after setting current for source stabilisation
+    stab_wait = Float(0.01).tag(pref=True)
 
     parallel = set_default({'activated': True, 'pool': 'instr'})
     database_entries = set_default({'current': 0.01})
@@ -264,6 +358,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
             return
 
         self.write_in_database('current', last_value)
+        time.sleep(self.stab_wait)
 
 
 class SetDCFunctionTask(InterfaceableTaskMixin, InstrumentTask):

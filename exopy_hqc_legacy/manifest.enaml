@@ -89,17 +89,20 @@ enamldef HqcLegacyManifest(PluginManifest):
         point = 'exopy.instruments.settings'
         Settings:
             id = 'MagnetConversionSetting'
-            description = ('Magnet-dependent field to current ratio that need '
+            description = ('Magnet-dependent properties that need '
                            'to be specified for field sources.')
             new => (workbench, defaults, read_only):
                 with enaml.imports():
                     from .instruments.settings.magnet_conversion_setting\
                         import MagnetConversionSetting
                 mc = defaults.get('magnet_conversion', '0.')
+                lfl = defaults.get('lower_field_limit', '0.')
                 uid = defaults.get('user_id', '')
                 widget = MagnetConversionSetting(workbench=workbench,
                                                  user_id=uid,
-                                                 magnet_conversion=mc)
+                                                 magnet_conversion=mc,
+                                                 lower_field_limit=lfl,
+                                                 )
                 widget.read_only = read_only
                 return widget
 
@@ -502,7 +505,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                      'MultiChannelVoltageSourceInterface')
                         views = ['views.dc_views:'
                                  'MultiChannelVoltageSourceILabelModule',
-								 'views.dc_views:'
+                                 'views.dc_views:'
                                  'MultiChannelVoltageSourceIModule',
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceILabel',
