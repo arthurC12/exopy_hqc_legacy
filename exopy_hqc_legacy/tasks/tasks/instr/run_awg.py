@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2020 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -10,10 +10,11 @@
 
 """
 import logging
+import time
 
-from atom.api import (Str, set_default)
+from atom.api import (Float, Str, set_default)
 
-from exopy.tasks.api import (InstrumentTask, validators)
+from exopy.tasks.api import InstrumentTask
 
 
 class RunAWGTask(InstrumentTask):
@@ -21,22 +22,39 @@ class RunAWGTask(InstrumentTask):
 
     """
     #: Switch to choose the AWG run mode: on or off
-    switch = Str('Off').tag(pref=True, feval=validators.SkipLoop())
+    switch = Str('Off').tag(pref=True)
+
+    #: Delay before setting the AWG. Useful when loading large sequences
+    delay = Float(0).tag(pref=True)
+
     database_entries = set_default({'output': 0})
 
-    def perform(self, switch=None):
+    def perform(self):
         """Default interface behavior.
 
         """
-        if switch is None:
-            switch = self.format_and_eval_string(self.switch)
-
-        if switch == 'On' or switch == 1:
-            self.driver.running = 1
+        if self.switch.lower() == 'on' or self.switch == '1':
+            self.driver.send_event()
+            # The delay is required when loading large sequences
+            self.driver.set_running(True, delay=self.delay)
             self.write_in_database('output', 1)
-        else:
-            self.driver.running = 0
+        elif self.switch.lower() == 'event':
+            time.sleep(self.delay)
+            self.driver.send_event()
+        elif self.switch.lower() == 'rearm':
+            time.sleep(self.delay)
+            success = False
+            while not success:
+                self.driver.send_event()
+                pos = int(self.driver.ask_sequencer_pos())
+                if pos == 1:
+                    success = True
+            time.sleep(self.delay)
+        elif self.switch.lower() == 'off' or self.switch == '0':
+            time.sleep(self.delay)
+            self.driver.set_running(False)
             self.write_in_database('output', 0)
-        log = logging.getLogger(__name__)
-        msg = 'AWG running state OK'
-        log.debug(msg)
+        else:
+            logger = logging.getLogger(__name__)
+            msg = "Unable to recognize {} running mode"
+            logger.warning(msg.format(self.switch))
