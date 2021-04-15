@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -10,6 +10,7 @@
 
 """
 import re
+import numpy as np
 from textwrap import fill
 from inspect import cleandoc
 
@@ -162,30 +163,25 @@ class AgilentPSG(VisaInstrument):
             return float(phase)
         else:
             raise InstrIOError
-
+    
     @phase.setter
     @secure_communication()
     def phase(self, value):
         """Phase setter method
         """
-        pi = 3.141592653589793
         unit = self.phase_unit
         self.write(':PHAS {}{}'.format(value, unit))
         result = self.query(':PHASe?')
         if unit == 'Deg':
-            value = value - (value//180)*180
+            value = np.deg2rad(value%180)
         elif unit == 'Rad':
-            value = value - (value//pi)*pi
+            value = value%np.pi
         if result:
             result = float(result)
-            result = result - (result//pi)*pi
-            if unit == 'Deg':
-                result /= pi/180
-            if abs(result - value) > 10**-3:
+            result = result%np.pi
+            if abs(result - value) > 10**-2:
                 mes = 'Instrument did not set correctly the phase'
                 raise InstrIOError(mes)
         else:
             raise InstrIOError('PSG signal generator did not return its phase')
-
-
-
+            

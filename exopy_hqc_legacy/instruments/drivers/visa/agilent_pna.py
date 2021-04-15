@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -394,7 +394,7 @@ class AgilentPNAChannel(BaseInstrument):
                 'SENSe{}:FREQuency:STARt?'.format(self._channel)))*1e-9
             sweep_stop = float(self._pna.query(
                 'SENSe{}:FREQuency:STOP?'.format(self._channel)))*1e-9
-            return np.linspace(sweep_start, sweep_stop, int(sweep_points))
+            return np.linspace(sweep_start, sweep_stop, int(round(sweep_points)))
         elif sweep_type == 'POW':
             sweep_start = float(self._pna.query('SOURce{}:POWer:STARt?'
                                                 .format(self._channel)))

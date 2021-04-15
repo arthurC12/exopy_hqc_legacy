@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-#==============================================================================
-# module : agilent_psa.py
-# author : Benjamin Huard
-# license : MIT license
-#==============================================================================
+# -----------------------------------------------------------------------------
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+#
+# Distributed under the terms of the BSD license.
+#
+# The full license is in the file LICENCE, distributed with this software.
+# -----------------------------------------------------------------------------
 """
 This module defines drivers for agilent PSA.
 :Contains:
@@ -628,3 +630,4 @@ class AgilentPSA(VisaInstrument):
         if result.lower() != value.lower()[:len(result)]:
             raise InstrIOError(cleandoc('''PSA did not set correctly the
                 average state'''))
+                

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -163,15 +163,15 @@ class InstrJob(object):
     cancel : Callable, optional
         Function to cancel the task.
 
-    timeout : Callable, optional
-        Function called when the task timeouts
+    timeout_handler : Callable, optional
+        Function called if the task timeouts
 
     """
-    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout):
+    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout_handler):
         self.condition_callable = condition_callable
         self.expected_waiting_time = expected_waiting_time
         self.cancel = cancel
-        self.timeout = timeout
+        self.timeout_handler = timeout_handler
         self._start_time = time.time()
 
     def wait_for_completion(self, break_condition_callable=None, timeout=15,
@@ -220,8 +220,8 @@ class InstrJob(object):
                 return True
             if remaining_time < 0 or break_condition_callable():
                 if remaining_time < 0:
-                    if self.timeout:
-                        self.timeout()
+                    if self.timeout_handler:
+                        self.timeout_handler()
                     raise InstrTimeoutError()
                 else:
                     return False
