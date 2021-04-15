@@ -187,6 +187,31 @@ enamldef SetDcCurrentView(InstrView): view:
         resist_width = 'ignore'
         value := task.stab_wait
 
+enamldef SetDCCurrentComplianceView(InstrView): view:
+    """View for the SetDCCurrentComplianceTask.
+
+    """
+    #: Attribute set by the parent view if the task is embedded inside a
+    #: LoopTask
+    attr in_loop : bool = False
+    constraints = [factory(auto_grid_layout)]
+
+    Conditional:
+        condition << not in_loop
+        Label: 
+            text = 'Current compliance (A)'
+        QtLineCompleter:
+            hug_width = 'ignore'
+            text := task.target_value
+            entries_updater << task.list_accessible_database_entries
+            tool_tip = EVALUATER_TOOLTIP
+
+    Label: safe:
+        text = 'Safe max (A)'
+    FloatField: safe_val:
+        resist_width = 'ignore'
+        value := task.safe_max
+
 enamldef SetDcFunctionView(InstrView): view:
     """View for the SetDCFunctionTask.
 

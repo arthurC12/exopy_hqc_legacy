@@ -31,3 +31,16 @@ enamldef MeasDCVoltView(InstrView): view:
         value := task.wait_time
         tool_tip = fill("Time to wait before querying values from the "
                         "voltmeter.", 60)
+
+enamldef MeasDCCurrentView(InstrView): view:
+    """View for the DCCurrentMeasTask.
+
+    """
+    constraints = [factory(auto_grid_layout)]
+
+    Label:
+        text = 'Wait (s)'
+    FloatField:
+        value := task.wait_time
+        tool_tip = fill("Time to wait before querying values from the "
+                        "currentmeter.", 60)

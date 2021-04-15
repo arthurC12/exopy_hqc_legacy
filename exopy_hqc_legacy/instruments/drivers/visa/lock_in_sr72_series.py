@@ -53,6 +53,28 @@ class LockInSR7265(VisaInstrument):
         self.write_termination = '\n'
         self.read_termination = '\n'
 
+    def query_safewhenzero(self, SCPIInstr):
+        """This query method avoids issues with strings of type 0.0E+00\x00\r
+
+        """
+        try:
+            res = self.query(SCPIInstr)
+            value = float(res)
+        except ValueError:
+            value = 0
+        return value
+
+    def query_ascii_values_safewhenzero(self, SCPIInstr):
+        """This query method avoids issues with strings of type 0.0E+00\x00\r
+
+        """
+        try:
+            res = self.query_ascii_values(SCPIInstr)
+            values = float(res)
+        except ValueError:
+            values = 0,0
+        return values
+
     @secure_communication()
     def read_x(self):
         """
@@ -62,12 +84,12 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        value = self.query('X.')
+        value = self.query_safewhenzero('X.')
         status = self._check_status()
         if status != 'OK' or not value:
             raise InstrIOError('The command did not complete correctly')
         else:
-            return float(value)
+            return value
 
     @secure_communication()
     def read_y(self):
@@ -78,12 +100,12 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        value = self.query('Y.')
+        value = self.query_safewhenzero('Y.')
         status = self._check_status()
         if status != 'OK' or not value:
             raise InstrIOError('The command did not complete correctly')
         else:
-            return float(value)
+            return value
 
     @secure_communication()
     def read_xy(self):
@@ -94,7 +116,7 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        values = self.query_ascii_values('XY.')
+        values = self.query_ascii_values_safewhenzero('XY.')
         status = self._check_status()
         if status != 'OK' or not values:
             raise InstrIOError('The command did not complete correctly')
@@ -110,12 +132,12 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        value = self.query('MAG.')
+        value = self.query_safewhenzero('MAG.')
         status = self._check_status()
         if status != 'OK' or not value:
             return InstrIOError('The command did not complete correctly')
         else:
-            return float(value)
+            return value
 
     @secure_communication()
     def read_phase(self):
@@ -126,12 +148,12 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        value = self.query('PHA.')
+        value = self.query_safewhenzero('PHA.')
         status = self._check_status()
         if status != 'OK' or not value:
             raise InstrIOError('The command did not complete correctly')
         else:
-            return float(value)
+            return value
 
     @secure_communication()
     def read_amp_and_phase(self):
@@ -142,7 +164,7 @@ class LockInSR7265(VisaInstrument):
         independent values if the instrument is queried too often.
 
         """
-        values = self.query_ascii_values('MP.')
+        values = self.query_ascii_values_safewhenzero('MP.')
         status = self._check_status()
         if status != 'OK' or not values:
             raise InstrIOError('The command did not complete correctly')

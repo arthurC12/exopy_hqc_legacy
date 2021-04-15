@@ -13,7 +13,7 @@ import time
 import numbers
 import logging
 
-from atom.api import (Float, Value, Str, Int, Bool, set_default, Tuple)
+from atom.api import (Float, Value, Str, Int, Bool, set_default, Enum, Tuple)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
@@ -75,6 +75,13 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
                 raise ValueError(msg.format(self.name))
 
         current_value = getattr(self.driver, 'voltage')
+
+        value = self.format_and_eval_string(self.target_value)
+
+        if self.safe_delta and abs(current_value-value) > self.safe_delta:
+            msg = ('Voltage asked for {} is too far away from the current voltage {}!')
+            raise ValueError(msg.format(value,current_value))
+
         if self.ramp_with_instr:
             success = self.instr_set(value, self.driver.smooth_change, current_value)
         else:    
@@ -157,10 +164,6 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
             value = target_value
         else:
             value = self.format_and_eval_string(self.target_value)
-
-        if self.safe_delta and abs(current_value-value) > self.safe_delta:
-            msg = ('Requested voltage {} is too far away from the current voltage {}!')
-            raise ValueError(msg.format(value, current_value))
 
         if self.safe_max and self.safe_max < abs(value):
             msg = 'Requested voltage {} exceeds safe max : {}'
@@ -262,6 +265,35 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
         else:
             return True, {}
 
+
+class SetDCCurrentComplianceTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set a DC current compliance to the specified value.
+
+    The user can choose to limit the value by a safety max
+
+    """
+    #: Target value for the compliance
+    target_value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
+
+    #: Largest allowed current
+    safe_max = Float(0.0).tag(pref=True)
+
+    parallel = set_default({'activated': True, 'pool': 'instr'})
+    database_entries = set_default({'compliance_value': 0.01})
+
+    def i_perform(self, value=None):
+        """Default interface.
+
+        """
+        if value is None:
+            value = self.format_and_eval_string(self.target_value)
+
+        if self.safe_max and self.safe_max < abs(value):
+            msg = 'Requested current {} exceeds safe max : {}'
+            raise ValueError(msg.format(value, self.safe_max))
+
+        self.driver.current_compliance = value
+        self.write_in_database('compliance_value', value)
 
 class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     """Set a DC current to the specified value.

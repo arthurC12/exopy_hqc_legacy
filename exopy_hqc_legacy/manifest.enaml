@@ -170,6 +170,17 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'VisaRS232':
                                            {'resource_class': 'INSTR'}
                                        }
+                    Driver:
+                        driver = 'keithley_multimeters:Keithley2450'
+                        model = '2450'
+                        kind = 'DC source'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR',
+                                                   'manufacturer_id': '0x05E6',
+                                                   'model_code': '0x2450'},
+                                       'VisaRS232':
+                                           {'resource_class': 'INSTR'}
+                                       }
                 Drivers:
                     manufacturer = 'Oxford'
                     Driver:
@@ -383,9 +394,14 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'meas_dc_tasks:MeasDCVoltageTask'
                     view = 'views.meas_dc_views:MeasDCVoltView'
                     instruments = ['exopy_hqc_legacy.Legacy.Keithley2000',
+                                   'exopy_hqc_legacy.Legacy.Keithley2450',
                                    'exopy_hqc_legacy.Legacy.Agilent34410A',
                                    'exopy_hqc_legacy.Legacy.Yokogawa7651',
                                    'exopy_hqc_legacy.Legacy.YokogawaGS200']
+                Task:
+                    task = 'meas_dc_tasks:MeasDCCurrentTask'
+                    view = 'views.meas_dc_views:MeasDCCurrentView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Keithley2450']
                 Task:
                     task = 'rf_tasks:SetRFFrequencyTask'
                     view = 'views.rf_views:RFFrequencyView'
@@ -498,7 +514,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'dc_tasks:SetDCVoltageTask'
                     view = 'views.dc_views:SetDcVoltageView'
                     instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
-                                   'exopy_hqc_legacy.Legacy.Yokogawa7651']
+                                   'exopy_hqc_legacy.Legacy.Yokogawa7651',
+                                   'exopy_hqc_legacy.Legacy.Keithley2450']
                     metadata = {'loopable': True}
                     Interface:
                         interface = ('dc_tasks:'
@@ -513,19 +530,33 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'MultiChannelVoltageSourceIChannel']
                         instruments = ['exopy_hqc_legacy.Legacy.TinyBilt']
                 Task:
+                    task = 'dc_tasks:SetDCCurrentComplianceTask'
+                    view = 'views.dc_views:SetDCCurrentComplianceView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Keithley2450']
+                    metadata = {'loopable': True}
+                Task:
+                    task = 'dc_tasks:GetDCVoltageTask'
+                    view = 'views.dc_views:GetDcVoltageView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651']
+                    metadata = {'loopable': True}
+                Task:
                     task = 'dc_tasks:SetDCCurrentTask'
                     view = 'views.dc_views:SetDcCurrentView'
-                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200']
+                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
+                                   'exopy_hqc_legacy.Legacy.Yokogawa7651',
+                                   'exopy_hqc_legacy.Legacy.Keithley2450']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCFunctionTask'
                     view = 'views.dc_views:SetDcFunctionView'
-                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200']
+                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
+                                   'exopy_hqc_legacy.Legacy.Keithley2450']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCOutputTask'
                     view = 'views.dc_views:SetDcOutputView'
-                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200']
+                    instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
+                                   'exopy_hqc_legacy.Legacy.Keithley2450']
                 Task:
                     task = 'spdev_tasks:DemodSPTask'
                     view = 'views.spdev_views:DemodSpView'
