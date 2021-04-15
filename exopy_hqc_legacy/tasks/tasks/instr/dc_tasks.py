@@ -37,8 +37,6 @@ class GetDCVoltageTask(InstrumentTask):
                 raise ValueError(msg.format(self.name))
 
         current_value = getattr(self.driver, 'voltage')
-        print('The current voltage is: {}'.format(current_value))
-        
         self.write_in_database('voltage', float(current_value))
 
 

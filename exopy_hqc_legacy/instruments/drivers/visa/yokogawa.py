@@ -369,7 +369,7 @@ class Yokogawa7651(VisaInstrument):
         # to avoid floating point rouding
         if abs(value - round(set_point, 9)) > 10**-9:
             raise InstrIOError('Instrument did not set correctly the voltage')
-    
+
     @instrument_property
     @secure_communication()
     def current(self):
