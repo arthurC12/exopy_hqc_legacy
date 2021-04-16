@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
 # The full license is in the file LICENCE, distributed with this software.
 # -----------------------------------------------------------------------------
-"""Tasks to set the parameters of arbitrary waveform generators.
+"""Tasks to tune up an IQ mixer.
 
 """
 import logging

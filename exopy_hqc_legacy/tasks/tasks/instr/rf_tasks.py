@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -254,3 +254,4 @@ class SetRFPhaseTask(InterfaceableTaskMixin, InstrumentTask):
 
         """
         return phase*CONVERSION_FACTORS[self.unit][unit]
+        

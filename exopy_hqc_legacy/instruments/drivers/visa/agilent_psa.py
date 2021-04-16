@@ -630,4 +630,3 @@ class AgilentPSA(VisaInstrument):
         if result.lower() != value.lower()[:len(result)]:
             raise InstrIOError(cleandoc('''PSA did not set correctly the
                 average state'''))
-                

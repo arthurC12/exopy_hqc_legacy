@@ -167,11 +167,11 @@ class InstrJob(object):
         Function called if the task timeouts
 
     """
-    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout_handler):
+    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout):
         self.condition_callable = condition_callable
         self.expected_waiting_time = expected_waiting_time
         self.cancel = cancel
-        self.timeout_handler = timeout_handler
+        self.timeout = timeout_handler
         self._start_time = time.time()
 
     def wait_for_completion(self, break_condition_callable=None, timeout=15,

@@ -10,7 +10,6 @@
 
 """
 import re
-import numpy as np
 from textwrap import fill
 from inspect import cleandoc
 
@@ -163,25 +162,30 @@ class AgilentPSG(VisaInstrument):
             return float(phase)
         else:
             raise InstrIOError
-    
+
     @phase.setter
     @secure_communication()
     def phase(self, value):
         """Phase setter method
         """
+        pi = 3.141592653589793
         unit = self.phase_unit
         self.write(':PHAS {}{}'.format(value, unit))
         result = self.query(':PHASe?')
         if unit == 'Deg':
-            value = np.deg2rad(value%180)
+            value = value - (value//180)*180
         elif unit == 'Rad':
-            value = value%np.pi
+            value = value - (value//pi)*pi
         if result:
             result = float(result)
-            result = result%np.pi
-            if abs(result - value) > 10**-2:
+            result = result - (result//pi)*pi
+            if unit == 'Deg':
+                result /= pi/180
+            if abs(result - value) > 10**-3:
                 mes = 'Instrument did not set correctly the phase'
                 raise InstrIOError(mes)
         else:
             raise InstrIOError('PSG signal generator did not return its phase')
-            
+
+
+

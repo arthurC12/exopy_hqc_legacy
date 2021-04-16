@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -24,7 +24,7 @@ class PSAGetTrace(InstrumentTask):
     """ Get the trace displayed on the Power Spectrum Analyzer.
     """
     trace = Int(1).tag(pref=True)
-    mode = 'SA'
+    mode  = Enum('SA').tag(pref=True)
     
     database_entries = set_default({'trace_data': np.array([1.0]),
                                     'psa_config': ''})
@@ -292,3 +292,4 @@ class PSASetParam(InstrumentTask):
                     ''.format(self.video_bandwidth)
 
         return test, traceback
+        
