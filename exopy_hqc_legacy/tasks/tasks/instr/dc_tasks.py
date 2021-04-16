@@ -84,7 +84,7 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
         current_value = getattr(self.driver, 'voltage')
 
         value = self.format_and_eval_string(self.target_value)
-        #if safe_delta = 0 ignore
+
         if self.safe_delta and abs(current_value-value) > self.safe_delta:
             msg = ('Voltage asked for {} is too far away from the current voltage {}!')
             raise ValueError(msg.format(value,current_value))

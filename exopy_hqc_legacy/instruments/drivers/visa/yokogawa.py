@@ -142,7 +142,7 @@ class YokogawaGS200(VisaInstrument):
         NB: does not check the current function.
 
         """
-        current = 1e6*self.query(":SOURce:LEVel?")
+        current = self.query(":SOURce:LEVel?")
         if current:
             return float(current)
         else:
@@ -156,10 +156,8 @@ class YokogawaGS200(VisaInstrument):
         NB: does not check the current function.
 
         """
-        # We now adress the source in mA
-        self.write(":SOURce:LEVel {0:.9f}".format(1e-6*set_point))
+        self.write(":SOURce:LEVel {}".format(set_point))
         value = float(self.query('SOURce:LEVel?'))
-        value = 1e6*value
         # to avoid floating point rouding
         if abs(value - round(set_point, 6)) > 10**-6:
             raise InstrIOError('Instrument did not set correctly the current')

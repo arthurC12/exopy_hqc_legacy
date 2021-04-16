@@ -311,7 +311,7 @@ class SaveFileTask(SimpleTask):
             self.file_object.close()
             self.initialized = False
             self.old_file = self.format_string(self.filename)
-            
+
         # Initialisation.
         if not self.initialized:
 
@@ -583,8 +583,8 @@ class SaveFileHDF5Task(SimpleTask):
         if self.reshape_loop:
             shape_loop = tuple(self.format_and_eval_string(self.shape_loop))
             shape_max = shape_loop
-            # if the user gives the shape of the array, we assume it gives the 
-            # correct size, 
+            # if the user gives the shape of the array, we assume they gave the
+            # correct size
         else:
             shape_loop = (calls_estimation,)
             shape_max = (None,)
@@ -636,7 +636,7 @@ class SaveFileHDF5Task(SimpleTask):
                     f.create_dataset(label, shape_loop, shape_max,
                                      self.datatype, self.compression)
                     ordered_keys.append(label)
-                    
+
             f.attrs['header'] = self.format_string(self.header)
             f.attrs['count_calls'] = 0
             f.attrs['reshape_loop'] = self.reshape_loop
