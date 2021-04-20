@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-#==============================================================================
-# module : agilent_pxa.py
-# author : Zaki Leghtas
-# license : MIT license
-#==============================================================================
+# -----------------------------------------------------------------------------
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+#
+# Distributed under the terms of the BSD license.
+#
+# The full license is in the file LICENCE, distributed with this software.
+# -----------------------------------------------------------------------------
 """
 This module defines drivers for agilent PXA.
 
@@ -121,54 +123,6 @@ class AgilentPXA(VisaInstrument):
         else:
             raise InstrIOError(cleandoc('''Agilent PXA did not return the
                 trace {} data'''.format(trace)))
-
-    # @instrument_property
-    # @secure_communication()
-    # def mode(self):
-    #     """
-    #     """
-    #     SAorBASIC = self.query('inst:sel?')
-    #     if SAorBASIC == 'SA':
-    #         return 'SA'
-    #     elif SAorBASIC == 'BASIC':
-    #         conf = self.query('conf?')
-    #         if conf:
-    #             return conf  # SPEC if basic mode with spectral density
-    #                         # or WAV if basic mode with time domain
-    #         else:
-    #             raise InstrIOError(cleandoc('''Agilent PXA did not return its
-    #                 mode'''))
-    #     else:
-    #         raise InstrIOError(cleandoc('''Agilent PXA did not return its
-    #                 mode'''))
-
-    # @mode.setter
-    # @secure_communication()
-    # def mode(self, value):
-    #     """
-    #     """
-    #     if value == 'SPEC':
-    #         self.write('INST:SEL BASIC')
-    #         self.write('CONF:SPECTRUM')
-    #         self.write("INIT:CONT ON")  # set in  continuous mode
-    #         self.write("SENS:SPEC:IFP WIDE")  # set the wide bandWidth 80MHz
-    #                                           # for spectrum
-    #         self.write("SENS:SPEC:AVER OFF")  # set the average off
-    #                                           # for spectrum
-    #         self.write("INIT:CONT OFF")  # set in single sweep mode
-    #         self.write("INIT:IMM")
-    #     elif value == "WAV":
-    #         self.write('INST:SEL BASIC')
-    #         self.write('CONF:WAV')
-    #         self.write("SENS:WAV:IFP WIDE")  # set the wide bandWidth 80MHz
-    #                                           # for timedomain
-    #         self.write("SENS:WAV:AVER OFF")  # set the average off
-    #                                           # for timedomain
-    #         self.write("SENS:WAV:ADC:DITHER OFF")  # dither signal off
-    #         self.write("INIT:CONT OFF")  # set in single sweep mode
-    #         self.write("INIT:IMM")
-    #     else:
-    #         self.write('INST:SEL SA')
 
     @instrument_property
     @secure_communication()

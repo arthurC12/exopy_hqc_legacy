@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2017 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -134,46 +134,6 @@ class FitVNAInterface(TaskInterface):
                    'freq fit = {} GHz, relative error = {}')
             log.warning(msg.format(round(val*1e-9, 3), round(fit_err, 2)))
 
-    def check(self, *args, **kwargs):
-        """ Check the target array can be found and has the right column.
-
-        """
-#        test, traceback = super(FitResonanceTask, self).check(*args, **kwargs)
-#
-#        if not test:
-#            return test, traceback
-#
-#        array = self.format_and_eval_string(self.target_array)
-#        err_path = self.get_error_path()
-#
-#        if self.column_name:
-#            if array.dtype.names:
-#                names = array.dtype.names
-#                if self.column_name not in names:
-#                    msg = 'No column named {} in array. (column are : {})'
-#                    traceback[err_path] = msg.format(self.column_name, names)
-#                    return False, traceback
-#            else:
-#                traceback[err_path] = 'Array has no named columns'
-#                return False, traceback
-#
-#        else:
-#            if array.dtype.names:
-#                msg = 'The target array has names columns : {}. Choose one'
-#                traceback[err_path] = msg.format(array.dtype.names)
-#                return False, traceback
-#            elif len(array.shape) > 1:
-#                msg = 'Must use 1d array when using non record arrays.'
-#                traceback[err_path] = msg
-#                return False, traceback
-
-        return True, {}
-
-    def _post_setattr_mode(self, old, new):
-        """ Update the database entries according to the mode.
-
-        """
-
 class FitAlazarInterface(TaskInterface):
     """ Store the pair(s) of index/value for the resonance frequency.
 
@@ -236,46 +196,6 @@ class FitAlazarInterface(TaskInterface):
             msg = ('Fit resonance has abnormally high fit error,'
                    'freq fit = {} GHz, relative error = {}')
             log.warning(msg.format(round(val*1e-9, 3), round(fit_err, 2)))
-
-    def check(self, *args, **kwargs):
-        """ Check the target array can be found and has the right column.
-
-        """
-#        test, traceback = super(FitResonanceTask, self).check(*args, **kwargs)
-#
-#        if not test:
-#            return test, traceback
-#
-#        array = self.format_and_eval_string(self.target_array)
-#        err_path = self.get_error_path()
-#
-#        if self.column_name:
-#            if array.dtype.names:
-#                names = array.dtype.names
-#                if self.column_name not in names:
-#                    msg = 'No column named {} in array. (column are : {})'
-#                    traceback[err_path] = msg.format(self.column_name, names)
-#                    return False, traceback
-#            else:
-#                traceback[err_path] = 'Array has no named columns'
-#                return False, traceback
-#
-#        else:
-#            if array.dtype.names:
-#                msg = 'The target array has names columns : {}. Choose one'
-#                traceback[err_path] = msg.format(array.dtype.names)
-#                return False, traceback
-#            elif len(array.shape) > 1:
-#                msg = 'Must use 1d array when using non record arrays.'
-#                traceback[err_path] = msg
-#                return False, traceback
-
-        return True, {}
-
-    def _post_setattr_mode(self, old, new):
-        """ Update the database entries according to the mode.
-
-        """
 
 def _find_weights(x, x_ref):
     '''
