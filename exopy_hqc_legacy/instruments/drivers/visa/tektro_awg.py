@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2020 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -499,6 +499,20 @@ class AWG(VisaInstrument):
         self.write('*WAI')
 
     @secure_communication()
+    def send_load_awg_file(self, awg_data, filename='setup'):
+        """Command to send and load and .awg file into the AWG
+
+           awg_data = bytearray
+
+        """
+        name_str = 'MMEMory:DATA "{}",'.format(filename+'.awg')
+        size_str = ('#' + str(len(str(len(awg_data)))) + str(len(awg_data)))
+        mes = name_str + size_str
+        self.write('MMEMory:CDIRectory "/Users/OEM/Documents"')
+        self._driver.write_raw(mes.encode('ASCII') + awg_data)
+        self.write('AWGCONTROL:SRESTORE "{}"'.format(filename+'.awg'))
+
+    @secure_communication()
     def clear_sequence(self):
         """Command to delete the sequence
 
@@ -513,6 +527,35 @@ class AWG(VisaInstrument):
         self.write('SEQuence:ELEMent' + str(position) + ':GOTO:STATe 1')
         self.write('SEQuence:ELEMent' + str(position) + ':GOTO:INDex ' +
                    str(goto))
+
+    @secure_communication()
+    def set_jump_pos(self, position, jump):
+        """Sets the jump value at position to jump
+
+        """
+        self.write('SEQuence:ELEMent{}:JTARget:TYPE INDex'.format(position))
+        self.write('SEQuence:ELEMent{}:JTARget:INDex {}'.format(position, jump))
+
+    @secure_communication()
+    def send_event(self):
+        """Send an event
+
+        """
+        self.write('EVENt:IMM')
+
+    @secure_communication()
+    def ask_sequencer_pos(self):
+        """Ask the current position index of the sequencer
+
+        """
+        return self.query('AWGC:SEQ:POS?')
+
+    @secure_communication()
+    def force_jump_to(self, pos):
+        """Make the sequencer jump to position pos
+
+        """
+        self.query('SEQUENCE:JUMP:IMMEDIATE {}'.format(pos))
 
     @secure_communication()
     def set_repeat(self, position, repeat):
@@ -679,36 +722,19 @@ class AWG(VisaInstrument):
             raise InstrIOError(cleandoc('''Instrument did not set correctly
                                         the sampling frequency'''))
 
-    @instrument_property
     @secure_communication()
-    def running(self):
-        """Run state getter method
-
-        """
-        self.clear_output_buffer()
-        run = self.query("AWGC:RST?")
-        if run == '0':
-            return '0 : Instrument has stopped'
-        elif run == '1':
-            return '1 : Instrument is waiting for trigger'
-        elif run == '2':
-            return '2 : Intrument is running'
-        else:
-            raise InstrIOError
-
-    @running.setter
-    @secure_communication()
-    def running(self, value):
+    def set_running(self, value, delay=0.0):
         """Run state setter method
 
         """
         self.clear_output_buffer()
-        if value in ('RUN', 1, 'True'):
+        if value in ('RUN', 1, 'True', True):
             self.write('AWGC:RUN:IMM')
-            if int(self.query('AWGC:RST?')) not in (1, 2):
+            run_mode = int(self.query('AWGC:RST?', delay=delay))
+            if run_mode not in (1, 2):
                 raise InstrIOError(cleandoc('''Instrument did not set
                                             correctly the run state'''))
-        elif value in ('STOP', 0, 'False'):
+        elif value in ('STOP', 0, 'False', False):
             self.write('AWGC:STOP:IMM')
             if int(self.query('AWGC:RST?')) != 0:
                 raise InstrIOError(cleandoc('''Instrument did not set
@@ -717,6 +743,20 @@ class AWG(VisaInstrument):
             mess = fill(cleandoc('''The invalid value {} was sent to
                                  running method''').format(value), 80)
             raise VisaTypeError(mess)
+
+    @instrument_property
+    @secure_communication()
+    def running(self):
+        """Run state getter method
+
+        """
+        self.clear_output_buffer()
+        running = int(self.query("AWGC:RST?"))
+        if running == 0:
+            return False
+        if running == 1 or running == 2:
+            return True
+        raise InstrIOError(cleandoc('''Couldn't read the run mode'''))
 
     @instrument_property
     @secure_communication()
@@ -766,7 +806,18 @@ class AWG(VisaInstrument):
         """Deletes all user-defined waveforms from the currently loaded setup
 
         """
+        try:
+            # Number of user defined waveforms
+            # 25 is the number of default waveforms
+            nb_waveforms = int(self.query("WLIST:SIZE?")) - 25
+        except Exception:
+            nb_waveforms = 0
+        wait_time = 1 + int(nb_waveforms / 120)
         self.write('WLIST:WAVEFORM:DELETE ALL')
+
+        msg = 'Waiting {}s for {} waveforms to be deleted'
+        logging.info(msg.format(wait_time,  nb_waveforms))
+        time.sleep(wait_time)
 
     def clear_all_sequences(self):
         """Clear the all sequences played by the AWG.

@@ -152,7 +152,7 @@ class VisaInstrument(BaseInstrument):
         Simply call the `read_values` method of the `Instrument` object
         stored in the attribute `_driver`
         """
-        return self._driver.read_values(format=0)
+        return self._driver.read_values(format)
 
     def read_ascii_values(self, converter='f', separator=','):
         """Read one line of the instrument's buffer and convert to values.
@@ -174,13 +174,13 @@ class VisaInstrument(BaseInstrument):
         """
         return self._driver.read_binary_values(datatype, is_big_endian)
 
-    def query(self, message):
+    def query(self, message, *args, **kwargs):
         """Send the specified message to the instrument and read its answer.
 
         Simply call the `query` method of the `Instrument` object stored in
         the attribute `_driver`
         """
-        return self._driver.query(message)
+        return self._driver.query(message, *args, **kwargs)
 
     def query_ascii_values(self, message, converter='f', separator=','):
         """Send the specified message to the instrument and convert its answer

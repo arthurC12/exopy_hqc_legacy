@@ -11,12 +11,33 @@
 """
 import time
 import numbers
-import logging
 
 from atom.api import (Float, Value, Str, Int, Bool, set_default, Enum, Tuple)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
+
+class GetDCVoltageTask(InstrumentTask):
+    """Get the current DC voltage of an instrument
+    """
+
+    parallel = set_default({'activated': False, 'pool': 'instr'})
+    database_entries = set_default({'voltage': 0.01})
+
+    def perform(self, value=None):
+        """Default interface.
+
+        """
+        if self.driver.owner != self.name:
+            self.driver.owner = self.name
+            if hasattr(self.driver, 'function') and\
+                    self.driver.function != 'VOLT':
+                msg = ('Instrument assigned to task {} is not configured to '
+                       'output a voltage')
+                raise ValueError(msg.format(self.name))
+
+        current_value = getattr(self.driver, 'voltage')
+        self.write_in_database('voltage', float(current_value))
 
 
 class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
@@ -53,8 +74,6 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
 
     parallel = set_default({'activated': True, 'pool': 'instr'})
     database_entries = set_default({'voltage': 0.01 })
-
-    log_prefix= 'Set DC voltage task: '
 
     def check_for_interruption(self):
         """Check if the user required an interruption.
@@ -359,7 +378,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
 
         last_value = current_value
 
-        if abs(last_value - value) < 1e-12:
+        if abs(last_value - value) < 1e-9:
             self.write_in_database('current', value)
             return
 
@@ -377,7 +396,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
         if abs(value-last_value) > abs(step):
             while not self.root.should_stop.is_set():
                 # Avoid the accumulation of rounding errors
-                last_value = round(last_value + step, 9)
+                last_value = round(last_value + step, 6)
                 setter(last_value)
                 if abs(value-last_value) > abs(step):
                     time.sleep(self.delay)
@@ -423,7 +442,7 @@ class SetDCOutputTask(InterfaceableTaskMixin, InstrumentTask):
 
     """
     #: Target value for the source output
-    switch = Str('OFF').tag(pref=True)
+    switch = Str('OFF').tag(pref=True, feval=validators.SkipLoop())
 
     database_entries = set_default({'output': 'OFF'})
 
