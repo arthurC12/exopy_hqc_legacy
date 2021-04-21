@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -57,6 +57,7 @@ class AgilentPSG(VisaInstrument):
         super(AgilentPSG, self).__init__(connection_info, caching_allowed,
                                          caching_permissions, auto_open)
         self.frequency_unit = 'GHz'
+        self.phase_unit = 'Deg'
         self.write_termination = '\n'
         self.read_termination = '\n'
 
@@ -150,3 +151,41 @@ class AgilentPSG(VisaInstrument):
             mess = fill(cleandoc('''The invalid value {} was sent to
                         switch_on_off method''').format(value), 80)
             raise VisaTypeError(mess)
+
+    @instrument_property
+    @secure_communication()
+    def phase(self):
+        """Phase getter method
+        """
+        phase = self.query(':PHASe?')
+        if phase:
+            return float(phase)
+        else:
+            raise InstrIOError
+
+    @phase.setter
+    @secure_communication()
+    def phase(self, value):
+        """Phase setter method
+        """
+        pi = 3.141592653589793
+        unit = self.phase_unit
+        self.write(':PHAS {}{}'.format(value, unit))
+        result = self.query(':PHASe?')
+        if unit == 'Deg':
+            value = value - (value//180)*180
+        elif unit == 'Rad':
+            value = value - (value//pi)*pi
+        if result:
+            result = float(result)
+            result = result - (result//pi)*pi
+            if unit == 'Deg':
+                result /= pi/180
+            if abs(result - value) > 10**-3:
+                mes = 'Instrument did not set correctly the phase'
+                raise InstrIOError(mes)
+        else:
+            raise InstrIOError('PSG signal generator did not return its phase')
+
+
+

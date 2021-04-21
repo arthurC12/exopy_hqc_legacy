@@ -156,6 +156,7 @@ class YokogawaGS200(VisaInstrument):
         NB: does not check the current function.
 
         """
+        set_point = round(set_point, 9)
         self.write(":SOURce:LEVel {}".format(set_point))
         value = float(self.query('SOURce:LEVel?'))
         # to avoid floating point rouding

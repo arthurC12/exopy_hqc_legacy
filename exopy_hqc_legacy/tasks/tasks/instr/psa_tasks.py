@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
 # The full license is in the file LICENCE, distributed with this software.
 # -----------------------------------------------------------------------------
 """Tasks to handle a signal analyser.
-
 """
 import numbers
 from inspect import cleandoc
@@ -23,10 +22,10 @@ from exopy.tasks.api import InstrumentTask, validators
 
 class PSAGetTrace(InstrumentTask):
     """ Get the trace displayed on the Power Spectrum Analyzer.
-
     """
     trace = Int(1).tag(pref=True)
-
+    mode  = Enum('SA').tag(pref=True)
+    
     database_entries = set_default({'trace_data': np.array([1.0]),
                                     'psa_config': ''})
 
@@ -46,16 +45,15 @@ class PSAGetTrace(InstrumentTask):
                           Bandwidth {}, Video Bandwidth {}, Number of points
                           {}, Mode {}''')
         psa_config = header.format(d.start_frequency_SA, d.stop_frequency_SA,
-                                   d.span_frequency, d.center_frequency,
-                                   d.average_count_SA, d.RBW, d.VBW_SA,
-                                   d.sweep_points_SA, sweep_modes[self.mode])
+                                    d.span_frequency, d.center_frequency,
+                                    d.average_count_SA, d.RBW, d.VBW_SA,
+                                    d.sweep_points_SA, sweep_modes[d.mode])
 
         self.write_in_database('psa_config', psa_config)
         self.write_in_database('trace_data', self.driver.read_data(self.trace))
 
     def check(self, *args, **kwargs):
         """Validate the provided trace number.
-
         """
         test, traceback = super(PSAGetTrace, self).check(*args, **kwargs)
 
@@ -74,7 +72,6 @@ EMPTY_INT = validators.SkipEmpty(types=numbers.Integral)
 
 class PSASetParam(InstrumentTask):
     """ Set important parameters of the Power Spectrum Analyzer.
-
     """
     trace = Int(1).tag(pref=True)
 
@@ -98,7 +95,6 @@ class PSASetParam(InstrumentTask):
 
     def perform(self):
         """Set the specified parameters.
-
         """
         if self.driver.owner != self.name:
             self.driver.owner = self.name
@@ -296,3 +292,4 @@ class PSASetParam(InstrumentTask):
                     ''.format(self.video_bandwidth)
 
         return test, traceback
+        

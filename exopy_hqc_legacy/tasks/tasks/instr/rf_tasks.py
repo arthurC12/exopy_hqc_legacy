@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -19,7 +19,9 @@ from exopy.tasks.api import (InstrumentTask, InterfaceableTaskMixin,
 CONVERSION_FACTORS = {'GHz': {'Hz': 1e9, 'kHz': 1e6, 'MHz': 1e3, 'GHz': 1},
                       'MHz': {'Hz': 1e6, 'kHz': 1e3, 'MHz': 1, 'GHz': 1e-3},
                       'kHz': {'Hz': 1e3, 'kHz': 1, 'MHz': 1e-3, 'GHz': 1e-6},
-                      'Hz': {'Hz': 1, 'kHz': 1e-3, 'MHz': 1e-6, 'GHz': 1e-9}}
+                      'Hz': {'Hz': 1, 'kHz': 1e-3, 'MHz': 1e-6, 'GHz': 1e-9},
+                      'Deg': {'Rad': 0.017453292519943295, 'Deg': 1},
+                      'Rad': {'Rad': 1, 'Deg': 57.29577951308232}}
 
 
 LOOP_REAL = validators.SkipLoop(types=numbers.Real)
@@ -194,3 +196,62 @@ class SetPulseModulationTask(InterfaceableTaskMixin, InstrumentTask):
         else:
             self.driver.pm_state = 'Off'
             self.write_in_database('pm_state', 0)
+            
+
+class SetRFPhaseTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set the frequency of the signal delivered by a RF source.
+
+    """
+    # Target frequency (dynamically evaluated)
+    phase = Str().tag(pref=True, feval=LOOP_REAL)
+
+    # Unit of the frequency
+    unit = Enum('Deg', 'Rad').tag(pref=True)
+
+    # Whether to start the source if its output is off.
+    auto_start = Bool(False).tag(pref=True)
+
+    database_entries = set_default({'phase': 0.0, 'unit': 'Deg'})
+
+    def check(self, *args, **kwargs):
+        """Add the unit into the database.
+
+        """
+        test, traceback = super(SetRFPhaseTask, self).check(*args,
+                                                            **kwargs)
+        self.write_in_database('unit', self.unit)
+
+        return test, traceback
+
+    def i_perform(self, phase=None):
+        """Default interface for simple sources.
+
+        """
+        if self.auto_start:
+            self.driver.output = 'On'
+
+        if phase is None:
+            phase = self.format_and_eval_string(self.phase)
+
+        self.driver.phase_unit = self.unit
+        self.driver.phase = phase
+        self.write_in_database('phase', phase)
+
+    def convert(self, phase, unit):
+        """ Convert a phase to the given unit.
+
+        Parameters
+        ----------
+        frequency : float
+            phase expressed in the task unit
+
+        unit : {'Deg', 'Rad'}
+            Unit in which to express the result
+
+        Returns
+        -------
+        converted_phase : float
+
+        """
+        return phase*CONVERSION_FACTORS[self.unit][unit]
+        
