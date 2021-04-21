@@ -114,7 +114,7 @@ class SynthHD(VisaInstrument):
         valueMHz_format = '{:.4f}'.format(valueMHz)
         self.write('f{}'.format(valueMHz_format))
         result = float(self.query('f?'))  # asks for frequency of current channel in MHz
-        if abs(result - valueMHz) > 1e-12:
+        if abs(result - valueMHz) > 1e-5:
             mes = 'Instrument did not set correctly the frequency'
             raise InstrIOError(mes)
         self.check_calibration()
@@ -140,7 +140,7 @@ class SynthHD(VisaInstrument):
         """
         self.write('W{:.4f}'.format(value))
         result = float(self.query('W?'))
-        if abs(result - value) > 10**-12:
+        if abs(result - value) > 10**-3:
             raise InstrIOError('Instrument did not set correctly the power')
         self.check_calibration()
 

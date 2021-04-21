@@ -110,7 +110,7 @@ class YokogawaGS200(VisaInstrument):
     @voltage_range.setter
     @secure_communication()
     def voltage_range(self, v_range):
-        """Voltage range getter method.
+        """Voltage range setter method.
 
         NB: does not check the current function.
 
@@ -158,9 +158,9 @@ class YokogawaGS200(VisaInstrument):
         """
         set_point = round(set_point, 9)
         self.write(":SOURce:LEVel {}".format(set_point))
-        value = self.query('SOURce:LEVel?')
+        value = float(self.query('SOURce:LEVel?'))
         # to avoid floating point rouding
-        if abs(float(value) - round(set_point, 9)) > 10**-9:
+        if abs(value - round(set_point, 6)) > 10**-6:
             raise InstrIOError('Instrument did not set correctly the current')
 
     @instrument_property
@@ -184,10 +184,10 @@ class YokogawaGS200(VisaInstrument):
         else:
             raise InstrIOError('Instrument did not return the range')
 
-    @voltage_range.setter
+    @current_range.setter
     @secure_communication()
     def current_range(self, c_range):
-        """Voltage range getter method.
+        """Current range setter method.
 
         NB: does not check the current function.
 
@@ -368,6 +368,32 @@ class Yokogawa7651(VisaInstrument):
         # to avoid floating point rouding
         if abs(value - round(set_point, 9)) > 10**-9:
             raise InstrIOError('Instrument did not set correctly the voltage')
+
+    @instrument_property
+    @secure_communication()
+    def current(self):
+        """Current getter method.
+
+        """
+        data = self.query("OD")
+        current = float(data[4::])
+        if current is not None:
+            return current
+        else:
+            raise InstrIOError('Instrument did not return the current')
+
+    @current.setter
+    @secure_communication()
+    def current(self, set_point):
+        """Current setter method.
+
+        """
+        self.write("S{:+E}E".format(set_point))
+        data = self.query("OD")
+        value = float(data[4::])
+        # to avoid floating point rouding
+        if abs(value - round(set_point, 9)) > 10**-9:
+            raise InstrIOError('Instrument did not set correctly the current')
 
     @instrument_property
     @secure_communication()
