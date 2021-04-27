@@ -11,6 +11,8 @@
 """
 from ..driver_tools import (InstrIOError, secure_communication)
 from ..visa_tools import VisaInstrument
+import numpy as np
+import logging
 
 
 class LockInSR7265(VisaInstrument):
@@ -70,7 +72,7 @@ class LockInSR7265(VisaInstrument):
         """
         try:
             res = self.query_ascii_values(SCPIInstr)
-            values = float(res)
+            values = tuple([float(r) for r in res])
         except ValueError:
             values = 0,0
         return values
@@ -172,6 +174,43 @@ class LockInSR7265(VisaInstrument):
             return values
 
     @secure_communication()
+    def set_osc_frequency(self, frequency):
+        """
+        Set the frequency (in Hz) outputted by the instrument
+
+        """
+        log = logging.getLogger(__name__)
+        msg = ('Set oscillation frequency (instr prop) to {:e}Hz'.format(frequency))
+        log.info(msg)
+        odg = np.floor(np.log10(frequency))
+        int_part = np.round(frequency/10**odg, 8)
+        self.write('OF. {}E{}'.format(int_part,odg))
+        status = self._check_status()
+        value = self.query_safewhenzero('OF.')
+        if np.abs(frequency-value)>1e-9:
+            raise InstrIOError('The instrument did not set frequency correctly')
+        if status != 'OK':
+            raise InstrIOError('The command did not complete correctly')
+
+    @secure_communication()
+    def set_osc_amplitude(self, amplitude):
+        """
+        Set the amplitude (in mV) outputted by the instrument
+
+        """
+        log = logging.getLogger(__name__)
+        msg = ('Set oscillation amplitude (instr prop) to {:e}mV'.format(amplitude))
+        log.info(msg)
+        self.write('OA. {}E-3'.format(int(amplitude)))
+        status = self._check_status()
+        value = self.query_safewhenzero('OA.')
+        log.info(value)
+        if np.abs(amplitude*1e-3 - value) > 1e-9:
+            raise InstrIOError('The instrument did not set amplitude correctly')
+        if status != 'OK':
+            raise InstrIOError('The command did not complete correctly')
+
+    @secure_communication()
     def _check_status(self):
         """
         Read the value of the status byte to determine if the last command
@@ -240,3 +279,14 @@ class LockInSR7270(LockInSR7265):
             return 'Command went wrong'
         else:
             return 'OK'
+
+class LockInSR7280(LockInSR7265):
+    """
+    Driver for a SR7270 lock-in, using the VISA library.
+
+    This driver does not give access to all the functionnality of the
+    instrument but you can extend it if needed. See the documentation of the
+    driver_tools package for more details about writing instruments drivers.
+
+    In principle, no difference between 7265 and 7280.
+    """

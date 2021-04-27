@@ -237,6 +237,14 @@ enamldef HqcLegacyManifest(PluginManifest):
                                            {'port': 50000,
                                             'resource_class': 'SOCKET'}
                                        }
+                    Driver:
+                        driver = 'lock_in_sr72_series:LockInSR7280'
+                        model = '7280'
+                        kind = 'Lock-in'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaRS232':
+                                           {'resource_class': 'INSTR'}
+                                       }
                 Drivers:
                     manufacturer = 'Anritsu'
                     Driver:
@@ -390,7 +398,25 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'lock_in_measure_task:LockInMeasureTask'
                     view = 'views.lock_in_meas_view:LockInMeasView'
                     instruments = ['exopy_hqc_legacy.Legacy.LockInSR7265',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7270',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7280',
                                    'exopy_hqc_legacy.Legacy.LockInSR830']
+                Task:
+                    task = 'set_lockin_parameters_tasks:SetOscillatorFrequencyTask'
+                    view = 'views.set_lockin_parameters_view:SetOscillatorFrequencyView'
+                    instruments = ['exopy_hqc_legacy.Legacy.LockInSR7265',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7270',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7280',
+                                   'exopy_hqc_legacy.Legacy.LockInSR830']
+                    metadata = {'loopable': True}
+                Task:
+                    task = 'set_lockin_parameters_tasks:SetOscillatorAmplitudeTask'
+                    view = 'views.set_lockin_parameters_view:SetOscillatorAmplitudeView'
+                    instruments = ['exopy_hqc_legacy.Legacy.LockInSR7265',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7270',
+                                   'exopy_hqc_legacy.Legacy.LockInSR7280',
+                                   'exopy_hqc_legacy.Legacy.LockInSR830']
+                    metadata = {'loopable': True}
                 Task:
                     task = 'meas_dc_tasks:MeasDCVoltageTask'
                     view = 'views.meas_dc_views:MeasDCVoltView'

@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+#
+# Distributed under the terms of the BSD license.
+#
+# The full license is in the file LICENCE, distributed with this software.
+# -----------------------------------------------------------------------------
+"""View for the SetOscillatorFrequencyTask.
+
+"""
+from textwrap import fill
+
+from enaml.widgets.api import (GroupBox, Label, Field, ObjectCombo)
+from enaml.stdlib.fields import FloatField
+from enaml.layout.api import factory
+
+from exopy.tasks.api import EVALUATER_TOOLTIP
+from exopy.utils.widgets.qt_completers import QtLineCompleter
+from exopy_hqc_legacy.utils.layouts import auto_grid_layout
+from ...base_instr_view import InstrView
+
+
+enamldef SetOscillatorFrequencyView(InstrView): view:
+    """View for the SetOscillatorFrequencyTask
+
+    """
+    constraints = [factory(auto_grid_layout)]
+
+    Label: freq_lab:
+        hug_width = 'ignore'
+        text = 'Frequency (Hz)'
+    QtLineCompleter: freq_val:
+        hug_width = 'ignore'
+        text := task.frequency
+
+enamldef SetOscillatorAmplitudeView(InstrView): view:
+    """View for the SetOscillatorAmplitudeTask
+
+    """
+    constraints = [factory(auto_grid_layout)]
+
+    Label: amp_lab:
+        hug_width = 'ignore'
+        text = 'Vac (mV)'
+    QtLineCompleter: amp_val:
+        hug_width = 'ignore'
+        text := task.amplitude
+        tool_tip = fill('Integer value between 0 and 1000',60)
