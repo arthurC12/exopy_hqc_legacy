@@ -80,15 +80,28 @@ class AgilentPNAChannel(BaseInstrument):
             self.selected_measure = meas_name
         else:
             meas_name = self.selected_measure
+            
+        # get the endianess of the output so that the data is read properly
+        data_endianess = self._pna.data_endianess
+        if data_endianess == 'SWAP':
+            is_big_endian = False
+        elif data_endianess == 'NORM':
+            is_big_endian = True
+        else:
+            raise InstrIOError(cleandoc('''Agilent PNA did not define 
+                                        endianess properly'''))
 
         data_request = 'CALCulate{}:DATA? FDATA'.format(self._channel)
-        if self._pna.data_format == 'REAL,32':
-            data = self._pna.query_binary_values(data_request, 'f')
-
+        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
+            data = self._pna.query_binary_values(data_request, 'f', 
+                                                 is_big_endian)
+            
         elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
-            data = self._pna.query_binary_values(data_request, 'd')
-
+            data = self._pna.query_binary_values(data_request, 'd', 
+                                                 is_big_endian)
+            
         else:
+            # ascii data cannot be saved with SaveFile or SaveFileHDF5
             data = self._pna.query_ascii_values(data_request, ascii)
 
         if data:
@@ -117,15 +130,28 @@ class AgilentPNAChannel(BaseInstrument):
         """
         if meas_name:
             self.selected_measure = meas_name
+            
+        # get the endianess of the output so that the data is read properly
+        data_endianess = self._pna.data_endianess
+        if data_endianess == 'SWAP':
+            is_big_endian = False
+        elif data_endianess == 'NORM':
+            is_big_endian = True
+        else:
+            raise InstrIOError(cleandoc('''Agilent PNA did not define 
+                                        endianess properly'''))
 
         data_request = 'CALCulate{}:DATA? SDATA'.format(self._channel)
-        if self._pna.data_format == 'REAL,32':
-            data = self._pna.query_binary_values(data_request, 'f')
-
+        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
+            data = self._pna.query_binary_values(data_request, 'f', 
+                                                 is_big_endian)
+            
         elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
-            data = self._pna.query_binary_values(data_request, 'd')
-
+            data = self._pna.query_binary_values(data_request, 'd',
+                                                 is_big_endian)
+            
         else:
+            # ascii data cannot be saved with SaveFile or SaveFileHDF5
             data = self._pna.query_ascii_values(data_request)
 
         if not meas_name:
@@ -885,7 +911,23 @@ class AgilentPNA(VisaInstrument):
         """
         self.write('FORMAT:DATA {}'.format(value))
         result = self.query('FORMAT:DATA?')
+        
+        self.write('FORMat:BORDer SWAPped')
 
         if result.lower() != value.lower()[:len(result)]:
+            print(result)
             raise InstrIOError(cleandoc('''PNA did not set correctly the
                 data format'''))
+
+    @instrument_property
+    @secure_communication()
+    def data_endianess(self):
+        """
+        """
+        data_endianess = self.query('FORMat:BORDer?')
+        if data_endianess:
+            return data_endianess
+        else:
+            raise InstrIOError(cleandoc('''Agilent PNA did not return the
+                    data endianess'''))
+                    

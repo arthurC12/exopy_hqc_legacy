@@ -350,6 +350,11 @@ class PNASweepTask(SingleChannelPNATask):
                     self.channel_driver.prepare_measure(meas_name, self.window,
                                                         i+1, clear)
                     clear = False
+                    
+        # changing format so that it does not ouput ascii which is default
+        # for PNA Agilent N5222A and messes up with the SaveFile(h5) tasks
+        if self.driver.data_format == 'ASCii,0':
+            self.driver.data_format = 'REAL,+32'
 
         current_x_axis = self.channel_driver.sweep_x_axis
         if self.start:
