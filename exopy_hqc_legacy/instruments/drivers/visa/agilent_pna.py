@@ -83,17 +83,17 @@ class AgilentPNAChannel(BaseInstrument):
 
         is_big_endian = self._pna.data_endianess == 'big'
         data_request = 'CALCulate{}:DATA? FDATA'.format(self._channel)
-        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
+        if self._pna.data_format == 'REAL,+32':
             data = self._pna.query_binary_values(data_request, datatype='f',
                                                  is_big_endian=is_big_endian,
                                                  container=np.ndarray)
 
-        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
+        elif self._pna.data_format == 'REAL,+64':
             data = self._pna.query_binary_values(data_request, datatype='d',
                                                  is_big_endian=is_big_endian,
                                                  container=np.ndarray)
 
-        elif self._pna.data_format in ('ASCii,0', 'ASC,+0'):
+        elif self._pna.data_format == 'ASC,+0':
             data = self._pna.query_ascii_values(data_request, converter='f',
                                                 container=np.ndarray)
 
@@ -128,17 +128,17 @@ class AgilentPNAChannel(BaseInstrument):
 
         is_big_endian = self._pna.data_endianess == 'big'
         data_request = 'CALCulate{}:DATA? SDATA'.format(self._channel)
-        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
+        if self._pna.data_format == 'REAL,+32':
             data = self._pna.query_binary_values(data_request, datatype='f',
                                                  is_big_endian=is_big_endian,
                                                  container=np.ndarray)
 
-        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
+        elif self._pna.data_format == 'REAL,+64':
             data = self._pna.query_binary_values(data_request, datatype='d',
                                                  is_big_endian=is_big_endian,
                                                  container=np.ndarray)
 
-        elif self._pna.data_format in ('ASCii,0', 'ASC,+0'):
+        elif self._pna.data_format == 'ASC,+0':
             data = self._pna.query_ascii_values(data_request, converter='f',
                                                 container=np.ndarray)
 
@@ -888,8 +888,12 @@ class AgilentPNA(VisaInstrument):
                  Use when you have small amounts of data to transfer.
         """
         data_format = self.query('FORMAT:DATA?')
-        if data_format:
-            return data_format
+        if '32' in data_format:
+            return 'REAL,+32'
+        elif '64' in data_format:
+            return 'REAL,+64'
+        elif '0' in data_format:
+            return 'ASC,+0'
         else:
             raise InstrIOError(cleandoc('''Agilent PNA did not return the
                     data format'''))
@@ -899,6 +903,13 @@ class AgilentPNA(VisaInstrument):
     def data_format(self, value):
         """
         """
+        if value == 'REAL,32':
+            value = 'REAL,+32'
+        elif value == 'REAL,64':
+            value = 'REAL,+64'
+        elif value == 'ASCii,0':
+            value = 'ASC,+0'
+
         self.write('FORMAT:DATA {}'.format(value))
         result = self.query('FORMAT:DATA?')
 
