@@ -80,35 +80,29 @@ class AgilentPNAChannel(BaseInstrument):
             self.selected_measure = meas_name
         else:
             meas_name = self.selected_measure
-            
-        # get the endianess of the output so that the data is read properly
-        data_endianess = self._pna.data_endianess
-        if data_endianess == 'little':
-            is_big_endian = False
-        elif data_endianess == 'big':
-            is_big_endian = True
-        else:
-            raise InstrIOError(cleandoc('''Agilent PNA did not define 
-                                        endianess properly'''))
 
+        is_big_endian = self._pna.data_endianess == 'big'
         data_request = 'CALCulate{}:DATA? FDATA'.format(self._channel)
         if self._pna.data_format in ('REAL,32', 'REAL,+32'):
-            data = self._pna.query_binary_values(data_request, datatype='f', 
-                                                 is_big_endian=is_big_endian)
-            
-        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
-            data = self._pna.query_binary_values(data_request, datatype='d', 
-                                                 is_big_endian=is_big_endian)
-            
-        else:
-            data = self._pna.query_ascii_values(data_request, ascii)
+            data = self._pna.query_binary_values(data_request, datatype='f',
+                                                 is_big_endian=is_big_endian,
+                                                 container=np.ndarray)
 
-        if data:
-            return np.array(data)
+        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
+            data = self._pna.query_binary_values(data_request, datatype='d',
+                                                 is_big_endian=is_big_endian,
+                                                 container=np.ndarray)
+
+        elif self._pna.data_format in ('ASCii,0', 'ASC,+0'):
+            data = self._pna.query_ascii_values(data_request, converter='f',
+                                                container=np.ndarray)
+
         else:
             raise InstrIOError(cleandoc('''Agilent PNA did not return the
                 channel {} formatted data for meas {}'''.format(
                 self._channel, meas_name)))
+
+        return data
 
     @secure_communication()
     def read_raw_data(self, meas_name=''):
@@ -129,39 +123,31 @@ class AgilentPNAChannel(BaseInstrument):
         """
         if meas_name:
             self.selected_measure = meas_name
-            
-        # get the endianess of the output so that the data is read properly
-        data_endianess = self._pna.data_endianess
-        if data_endianess == 'little':
-            is_big_endian = False
-        elif data_endianess == 'big':
-            is_big_endian = True
         else:
-            raise InstrIOError(cleandoc('''Agilent PNA did not define 
-                                        endianess properly'''))
-
-        data_request = 'CALCulate{}:DATA? SDATA'.format(self._channel)
-        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
-            data = self._pna.query_binary_values(data_request, datatype='f', 
-                                                 is_big_endian=is_big_endian)
-            
-        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
-            data = self._pna.query_binary_values(data_request, datatype='d', 
-                                                 is_big_endian=is_big_endian)
-            
-        else:
-            data = self._pna.query_ascii_values(data_request, ascii)
-
-        if not meas_name:
             meas_name = self.selected_measure
 
-        if data:
-            aux = np.array(data)
-            return aux[::2] + 1j*aux[1::2]
+        is_big_endian = self._pna.data_endianess == 'big'
+        data_request = 'CALCulate{}:DATA? SDATA'.format(self._channel)
+        if self._pna.data_format in ('REAL,32', 'REAL,+32'):
+            data = self._pna.query_binary_values(data_request, datatype='f',
+                                                 is_big_endian=is_big_endian,
+                                                 container=np.ndarray)
+
+        elif self._pna.data_format in ('REAL,64', 'REAL,+64'):
+            data = self._pna.query_binary_values(data_request, datatype='d',
+                                                 is_big_endian=is_big_endian,
+                                                 container=np.ndarray)
+
+        elif self._pna.data_format in ('ASCii,0', 'ASC,+0'):
+            data = self._pna.query_ascii_values(data_request, converter='f',
+                                                container=np.ndarray)
+
         else:
             raise InstrIOError(cleandoc('''Agilent PNA did not return the
                 channel {} formatted data for meas {}'''.format(
                 self._channel, meas_name)))
+
+        return data[::2] + 1j*data[1::2]
 
     def read_and_format_raw_data(self, meas_format, meas_name=''):
         """
@@ -894,6 +880,12 @@ class AgilentPNA(VisaInstrument):
     @secure_communication()
     def data_format(self):
         """
+        REAL,+32 - Best for transferring large amounts of measurement data.
+                   Can cause rounding errors in frequency data.
+        REAL,+64 - Slower but has more significant digits than REAL,32.
+                   REQUIRED to accurately represent frequency data.
+        ASC,+0 - The easiest to implement, but very slow.
+                 Use when you have small amounts of data to transfer.
         """
         data_format = self.query('FORMAT:DATA?')
         if data_format:
@@ -913,20 +905,21 @@ class AgilentPNA(VisaInstrument):
         if result.lower() != value.lower()[:len(result)]:
             raise InstrIOError(cleandoc('''PNA did not set correctly the
                 data format'''))
-        
+
     @instrument_property
     @secure_communication()
     def data_endianess(self):
         """
+        Returns the endianess of the output data
+        NORMal  - Use when your controller is anything other than an
+                  IBM compatible computers.
+        SWAPped - for IBM compatible computers
         """
         data_endianess = self.query('FORMat:BORDer?')
         if data_endianess == 'NORM':
-            data_endianess = 'big'
-            return data_endianess
+            return 'big'
         elif data_endianess == 'SWAP':
-            data_endianess = 'little'
-            return data_endianess
+            return 'little'
         else:
             raise InstrIOError(cleandoc('''Agilent PNA did not return the
                     data endianess'''))
-                    
