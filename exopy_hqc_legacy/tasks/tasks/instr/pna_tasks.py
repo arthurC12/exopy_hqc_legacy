@@ -351,6 +351,11 @@ class PNASweepTask(SingleChannelPNATask):
                                                         i+1, clear)
                     clear = False
 
+        # Best for transferring large amounts of measurement data.
+        # Can cause rounding errors in frequency data.
+        # Use 'REAL,+64' if good precision on frequency required.
+        self.driver.data_format = 'REAL,+32'
+
         current_x_axis = self.channel_driver.sweep_x_axis
         if self.start:
             start = self.format_and_eval_string(self.start)
