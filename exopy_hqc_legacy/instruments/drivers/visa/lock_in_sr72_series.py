@@ -290,3 +290,9 @@ class LockInSR7280(LockInSR7265):
 
     In principle, no difference between 7265 and 7280.
     """
+
+    def __init__(self, *args, **kwargs):
+
+        super(LockInSR7280, self).__init__(*args, **kwargs)
+        self.write_termination = '\n'
+        self.read_termination = '\n'
