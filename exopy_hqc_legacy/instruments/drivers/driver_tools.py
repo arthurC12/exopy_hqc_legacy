@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -45,6 +45,12 @@ class InstrError(Exception):
 
 
 class InstrIOError(InstrError):
+    """Generic error raised when an instrument does not behave as expected
+    """
+    pass
+
+
+class InstrTimeoutError(InstrError):
     """Generic error raised when an instrument does not behave as expected
     """
     pass
@@ -157,11 +163,15 @@ class InstrJob(object):
     cancel : Callable, optional
         Function to cancel the task.
 
+    timeout_handler : Callable, optional
+        Function called if the task timeouts
+
     """
-    def __init__(self, condition_callable, expected_waiting_time, cancel):
+    def __init__(self, condition_callable, expected_waiting_time, cancel, timeout_handler):
         self.condition_callable = condition_callable
         self.expected_waiting_time = expected_waiting_time
         self.cancel = cancel
+        self.timeout_handler = timeout_handler
         self._start_time = time.time()
 
     def wait_for_completion(self, break_condition_callable=None, timeout=15,
@@ -185,6 +195,10 @@ class InstrJob(object):
         result : bool
             Boolean indicating if the wait succeeded of was interrupted.
 
+        Raises
+        ------
+        InstrTimeoutError:
+            Raised if the operation timeout. 
         """
         while True:
             remaining_time = (self.expected_waiting_time -
@@ -216,7 +230,13 @@ class InstrJob(object):
             if self.condition_callable():
                 return True
             if remaining_time < 0 or break_condition_callable():
-                return False
+                if remaining_time < 0:
+                    if self.timeout_handler:
+                        self.timeout_handler()
+                    raise InstrTimeoutError()
+                else:
+                    return False
+
 
     def cancel(self, *args, **kwargs):
         """Cancel the long running job.

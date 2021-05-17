@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -128,6 +128,20 @@ enamldef HqcLegacyManifest(PluginManifest):
                     Driver:
                         driver = 'agilent_pna:AgilentPNA'
                         model = 'PNA'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+                    Driver:
+                        driver = 'agilent_pxa:AgilentPXA'
+                        model = 'PXA'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+                    Driver:
+                        driver = 'agilent_psa:AgilentPSA'
+                        model = 'PSA'
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
                                        'VisaUSB': {'resource_class': 'INSTR'},
                                        'VisaTCPIP': {'resource_class': 'INSTR'}
@@ -307,6 +321,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         kind = 'RF source'
                         connections = {'VisaTCPIP': {'resource_class': 'INSTR'}
                                         }
+
                 Drivers:
                     manufacturer = 'Anapico'
                     Driver:
@@ -349,14 +364,23 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'array_tasks:ArrayFindValueTask'
                     view = 'views.array_views:ArrayFindValueView'
                 Task:
+                    task = 'fit_resonance_tasks:FitResonanceTask'
+                    view = 'views.fit_resonance_view:FitResonanceView'
+                    Interface:
+                        interface = 'fit_resonance_tasks:FitVNAInterface'
+                        views = ['views.fit_resonance_view:FitVNAInterfaceView']
+                    Interface:
+                        interface = 'fit_resonance_tasks:FitAlazarInterface'
+                        views = ['views.fit_resonance_view:FitAlazarInterfaceView']
+                Task:
                     task = 'load_tasks:LoadArrayTask'
                     view = 'views.load_views:LoadArrayView'
                     Interface:
                         interface = 'load_tasks:CSVLoadInterface'
                         views = ['views.load_views:CSVLoadInterfaceView']
                     Interface:
-                        interface = 'load_tasks:H5PYLoadInterface'
-                        views = ['views.load_views:H5PYLoadInterfaceView']
+                        interface = 'load_tasks:DATLoadInterface'
+                        views = ['views.load_views:DATLoadInterfaceView']
                 Task:
                     task = 'save_tasks:SaveTask'
                     view = 'views.save_views:SaveView'
@@ -391,7 +415,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'meas_mag_field_task:MeasMagFieldTask'
                     view = 'views.meas_mag_field_view:MeasMagFieldView'
                     instruments = ['exopy_hqc_legacy.Legacy.IPS12010',
-                                   'exopy_hqc_legacy.Legacy.CS40',
+                                   'exopy_hqc_legacy.Legacy.CS4',
                                    'exopy_hqc_legacy.Legacy.C4G']
                     metadata = {'loopable': True}
                 Task:
@@ -515,6 +539,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.anapico_task_views:IAnapicoChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
                 Task:
+                    task = 'rf_tasks:SetRFPhaseTask'
+                    view = 'views.rf_views:RFPhaseView'
+                    instruments = ['exopy_hqc_legacy.Legacy.AgilentPSG']
+                    metadata = {'loopable': True}
+                Task:
                     task = 'pna_tasks:PNASinglePointMeasureTask'
                     view = 'views.pna_task_views:PNASinglePointView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
@@ -537,6 +566,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                     view = 'views.pna_task_views:ZNBGetTraceView'
                     instruments = ['exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24']
+                Task:
+                    task = 'psa_tasks:PSAGetTrace'
+                    view = 'views.psa_tasks_views:PSAGetTraceView'
+                    instruments = ['exopy_hqc_legacy.Legacy.AgilentPSA',
+                                   'exopy_hqc_legacy.Legacy.AgilentPXA']
                 Task:
                     task = 'dc_tasks:SetDCVoltageTask'
                     view = 'views.dc_views:SetDcVoltageView'
@@ -593,3 +627,4 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'run_awg:RunAWGTask'
                     view = 'views.run_awg_views:RunAWGView'
                     instruments = ['exopy_hqc_legacy.Legacy.AWG']
+                    

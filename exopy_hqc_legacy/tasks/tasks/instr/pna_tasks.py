@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+# Copyright 2015-2021 by ExopyHqcLegacy Authors, see AUTHORS for more details.
 #
 # Distributed under the terms of the BSD license.
 #
@@ -350,6 +350,11 @@ class PNASweepTask(SingleChannelPNATask):
                     self.channel_driver.prepare_measure(meas_name, self.window,
                                                         i+1, clear)
                     clear = False
+
+        # Best for transferring large amounts of measurement data.
+        # Can cause rounding errors in frequency data.
+        # Use 'REAL,+64' if good precision on frequency required.
+        self.driver.data_format = 'REAL,+32'
 
         current_x_axis = self.channel_driver.sweep_x_axis
         if self.start:

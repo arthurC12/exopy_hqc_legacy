@@ -157,6 +157,10 @@ class CS4(VisaInstrument):
         log.info(self.log_prefix+msg)
         # Start ramping.
         self.target_field = value
+        # Added a pause and then sweep up due to a buggy behavior of the source
+        sleep(1)
+        self.activity = 'Hold'
+        sleep(1)
         self.activity = 'To set point'
 
         # Create job.
@@ -165,9 +169,11 @@ class CS4(VisaInstrument):
         log = logging.getLogger(__name__)
         msg = ('Starting sweep, with wait of %s s')
         log.info(self.log_prefix+msg,wait)
-        job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep)
+        job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep,
+                       timeout=self.stop_sweep_safe)
         return job
 
+    @secure_communication()
     def stop_sweep(self):
         """Stop the field sweep at the current value.
 
@@ -176,6 +182,15 @@ class CS4(VisaInstrument):
         msg = ('Stopping sweep')
         log.info(self.log_prefix+msg)
         self.activity = 'Hold'
+
+    @secure_communication()
+    def stop_sweep_safe(self):
+        """Stop the field sweep at the current value, and turn of the switch heater.
+
+        """
+        self.activity = 'Hold'
+        self.heater_state = 'Off'
+        sleep(self.post_switch_wait)
 
     def check_connection(self):
         pass

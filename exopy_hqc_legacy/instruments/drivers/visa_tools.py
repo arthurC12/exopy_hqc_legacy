@@ -17,6 +17,7 @@ except ImportError as e:
     raise ImportError(msg) from e
 
 from .driver_tools import BaseInstrument, InstrIOError
+import numpy as np
 
 
 class VisaInstrument(BaseInstrument):
@@ -182,7 +183,8 @@ class VisaInstrument(BaseInstrument):
         """
         return self._driver.query(message, *args, **kwargs)
 
-    def query_ascii_values(self, message, converter='f', separator=','):
+    def query_ascii_values(self, message, converter='f', separator=',',
+                           container=np.ndarray):
         """Send the specified message to the instrument and convert its answer
         to values.
 
@@ -192,9 +194,11 @@ class VisaInstrument(BaseInstrument):
         stored in the attribute `_driver`
 
         """
-        return self._driver.query_ascii_values(message, converter, separator)
+        return self._driver.query_ascii_values(message, converter, separator,
+                                               container)
 
-    def query_binary_values(self, message, datatype='f', is_big_endian=False):
+    def query_binary_values(self, message, datatype='f', is_big_endian=False,
+                            container=np.ndarray):
         """Send the specified message to the instrument and convert its answer
         to values.
 
@@ -204,7 +208,8 @@ class VisaInstrument(BaseInstrument):
         stored in the attribute `_driver`
 
         """
-        return self._driver.query_binary_values(message, datatype, is_big_endian)
+        return self._driver.query_binary_values(message, datatype, is_big_endian,
+                                                container)
 
     def clear(self):
         """Resets the device (highly bus dependent).
