@@ -89,7 +89,7 @@ class CS4(VisaInstrument):
         """
 
         log = logging.getLogger(__name__)
-        msg = ('Establihing a connection with cs4')
+        msg = ('Establishing a connection with cs4')
         log.info(self.log_prefix+msg)
 
         super(CS4, self).open_connection(**para)
@@ -102,12 +102,9 @@ class CS4(VisaInstrument):
         """Read the current value of the output field.
 
         """
-        log = logging.getLogger(__name__)
-        msg = ('Reading output field ...')
-        log.info(self.log_prefix+msg)
         reading_field = float(self.query('IOUT?').strip(' T'))
         log = logging.getLogger(__name__)
-        msg = ('... %s T')
+        msg = ('Reading output field as %s T')
         log.info(self.log_prefix+msg,reading_field)
         return reading_field
 
@@ -116,10 +113,11 @@ class CS4(VisaInstrument):
         """Read the current value of the persistent field.
 
         """
+        reading_field = float(self.query('IMAG?').strip(' T'))
         log = logging.getLogger(__name__)
-        msg = ('Reading persistent field')
-        log.info(self.log_prefix+msg)
-        return float(self.query('IMAG?').strip(' T'))
+        msg = ('Reading persistent field as %s T')
+        log.info(self.log_prefix+msg,reading_field)
+        return reading_field
 
     def is_target_reached(self):
         """Check whether the target field has been reached.
@@ -151,10 +149,6 @@ class CS4(VisaInstrument):
             self.field_sweep_rate = rate
         rate = (self.field_sweep_rate if self.heater_state == 'On' else
                 self.fast_sweep_rate)
-
-        log = logging.getLogger(__name__)
-        msg = ('Preparing sweep')
-        log.info(self.log_prefix+msg)
         # Start ramping.
         self.target_field = value
         # Added a pause and then sweep up due to a buggy behavior of the source
@@ -170,7 +164,7 @@ class CS4(VisaInstrument):
         msg = ('Starting sweep, with wait of %s s')
         log.info(self.log_prefix+msg,wait)
         job = InstrJob(self.is_target_reached, wait, cancel=self.stop_sweep,
-                       timeout=self.stop_sweep_safe)
+                       timeout_handler=self.stop_sweep_safe)
         return job
 
     @secure_communication()
@@ -179,7 +173,7 @@ class CS4(VisaInstrument):
 
         """
         log = logging.getLogger(__name__)
-        msg = ('Stopping sweep')
+        msg = ('Stopping sweep (switch heater on)')
         log.info(self.log_prefix+msg)
         self.activity = 'Hold'
 
@@ -188,6 +182,9 @@ class CS4(VisaInstrument):
         """Stop the field sweep at the current value, and turn of the switch heater.
 
         """
+        log = logging.getLogger(__name__)
+        msg = ('Stopping sweep safe (switch heater off)')
+        log.info(self.log_prefix+msg)
         self.activity = 'Hold'
         self.heater_state = 'Off'
         sleep(self.post_switch_wait)
@@ -323,8 +320,8 @@ class CS4(VisaInstrument):
                 par += ' SLOW'
         if par:
             log = logging.getLogger(__name__)
-            msg = ('Set activity (instr prop)')
-            log.info(self.log_prefix+msg)
+            msg = ('Set activity (instr prop) as %s')
+            log.info(self.log_prefix+msg,'SWEEP ' + par)
             self.write('SWEEP ' + par)
         else:
             raise ValueError(cleandoc(''' Invalid parameter {} sent to

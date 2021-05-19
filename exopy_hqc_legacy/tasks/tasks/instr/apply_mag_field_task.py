@@ -99,7 +99,7 @@ class ApplyMagFieldTask(InstrumentTask):
             driver.heater_state = 'Off'
             sleep(self.post_switch_wait)
             # sweep down to zero at the fast sweep rate
-            job = driver.sweep_to_field(0, driver.fast_sweep_rate)
+            job = driver.sweep_to_field(0)
             job.wait_for_completion(self.check_for_interruption,
                                     timeout=60, refresh_time=1)
 
