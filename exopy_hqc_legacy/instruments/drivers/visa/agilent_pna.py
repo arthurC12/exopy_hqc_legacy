@@ -9,7 +9,6 @@
 """Driver for the Keysight VNA (PNA).
 
 """
-import logging
 from inspect import cleandoc
 import numpy as np
 
@@ -501,10 +500,14 @@ class AgilentPNAChannel(BaseInstrument):
     def if_bandwidth(self, value):
         """
         """
+        value_first_digit=np.round(value/10**(np.floor(np.log10(value))),1)
+        if (value_first_digit not in [1,1.5,2,3,5,7]) or value==1.5 or value<1 or value>1.5e7:
+            raise ValueError(cleandoc('''PNA only takes IF bandwidth from 1 Hz to 15 MHz, as 1, 1.5, 2, 3, 5, 7 x 1eX, and not 1.5 Hz'''.format(self._channel)))
         self._pna.write('SENSe{}:BANDwidth {}'.format(self._channel, value))
         result = self._pna.query('SENSe{}:BANDwidth?'.format(self._channel))
         if result:
-            if abs(float(result) > value) > 10**-12:
+            if abs(float(result) - value) > 10**-12:
+
                 raise InstrIOError(cleandoc('''PNA did not set correctly the
                     channel {} IF bandwidth'''.format(self._channel)))
         else:
@@ -770,6 +773,7 @@ class AgilentPNA(VisaInstrument):
         else:
             self.write('INITiate{}:IMMediate'.format(channel))
         self.write('*OPC')
+        self.check_operation_completion() #Resets Event Status register by polling once.
 
     @secure_communication()
     def check_operation_completion(self):
@@ -857,9 +861,9 @@ class AgilentPNA(VisaInstrument):
     def trigger_source(self):
         """
         """
-        scope = self.query('TRIGger:SEQuence:SOURce?')
-        if scope:
-            return scope
+        source = self.query('TRIGger:SEQuence:SOURce?')
+        if source:
+            return source
         else:
             raise InstrIOError(cleandoc('''Agilent PNA did not return the
                     trigger source'''))

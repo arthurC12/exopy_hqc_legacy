@@ -381,23 +381,38 @@ class PNASweepTask(SingleChannelPNATask):
                                                   start, stop, points)
 
         waiting_time = self.channel_driver.sweep_time
+        start_time = time.time()
+        refresh_time = 5
         self.driver.fire_trigger(self.channel)
-        time.sleep(waiting_time)
-        while not self.driver.check_operation_completion():
-            time.sleep(0.1*waiting_time)
+        while True:
+            remaining_time = (waiting_time -
+                              (time.time() - start_time))
+            if remaining_time < 0:
+                break
+            time.sleep(min(refresh_time, remaining_time))
+            if self.root.should_stop.is_set():
+                return
 
-        data = [np.linspace(start, stop, points)]
-        for i, meas_name in enumerate(meas_names):
-            if self.measures[i][1]:
-                data.append(
-                    self.channel_driver.read_formatted_data(meas_name))
-            else:
-                data.append(self.channel_driver.read_raw_data(meas_name))
+        is_done = self.driver.check_operation_completion()
+        while not is_done:
+            time.sleep(refresh_time)
+            is_done = self.driver.check_operation_completion()
+            if self.root.should_stop.is_set():
+                return
 
-        names = [str(self.sweep_type)] + [str('_'.join(meas))
-                                          for meas in self.measures]
-        final_arr = np.rec.fromarrays(data, names=names)
-        self.write_in_database('sweep_data', final_arr)
+        if is_done:
+            data = [np.linspace(start, stop, points)]
+            for i, meas_name in enumerate(meas_names):
+                if self.measures[i][1]:
+                    data.append(
+                        self.channel_driver.read_formatted_data(meas_name))
+                else:
+                    data.append(self.channel_driver.read_raw_data(meas_name))
+
+            names = [str(self.sweep_type)] + [str('_'.join(meas))
+                                              for meas in self.measures]
+            final_arr = np.rec.fromarrays(data, names=names)
+            self.write_in_database('sweep_data', final_arr)
 
     def check(self, *args, **kwargs):
         """Validate the measures.
