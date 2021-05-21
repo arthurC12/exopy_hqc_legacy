@@ -101,10 +101,10 @@ class AWGChannel(BaseInstrument):
 
         """
         with self.secure():
-            output = self._AWG.query('OUTP{}:STAT?'.format(self._channel))
-            if output == '1':
+            output = int(self._AWG.query('OUTP{}:STAT?'.format(self._channel)))
+            if output == 1:
                 return 'ON'
-            elif output == '0':
+            elif output == 0:
                 return 'OFF'
             else:
                 mes = cleandoc('AWG channel {} did not return its output'
@@ -123,12 +123,12 @@ class AWGChannel(BaseInstrument):
             if on.match(value) or value == 1:
 
                 self._AWG.write('OUTP{}:STAT ON'.format(self._channel))
-                if self._AWG.query('OUTP{}:STAT?'.format(self._channel)) != '1':
+                if int(self._AWG.query('OUTP{}:STAT?'.format(self._channel))) != 1:
                     raise InstrIOError(cleandoc('''Instrument did not set
                                                 correctly the output'''))
             elif off.match(value) or value == 0:
                 self._AWG.write('OUTP{}:STAT OFF'.format(self._channel))
-                if self._AWG.query('OUTP{}:STAT?'.format(self._channel)) != '0':
+                if int(self._AWG.query('OUTP{}:STAT?'.format(self._channel))) != 0:
                     raise InstrIOError(cleandoc('''Instrument did not set
                                                 correctly the output'''))
             else:
