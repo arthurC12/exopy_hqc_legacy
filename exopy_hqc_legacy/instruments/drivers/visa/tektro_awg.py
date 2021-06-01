@@ -544,6 +544,13 @@ class AWG(VisaInstrument):
         self.write('EVENt:IMM')
 
     @secure_communication()
+    def send_trigger(self):
+        """Send an event
+
+        """
+        self.write('*TRG')
+
+    @secure_communication()
     def ask_sequencer_pos(self):
         """Ask the current position index of the sequencer
 

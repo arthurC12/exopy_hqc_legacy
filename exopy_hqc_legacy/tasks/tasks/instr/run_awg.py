@@ -41,6 +41,9 @@ class RunAWGTask(InstrumentTask):
         elif self.switch.lower() == 'event':
             time.sleep(self.delay)
             self.driver.send_event()
+        elif self.switch.lower() == 'trigger':
+            time.sleep(self.delay)
+            self.driver.send_trigger()
         elif self.switch.lower() == 'rearm':
             time.sleep(self.delay)
             success = False
