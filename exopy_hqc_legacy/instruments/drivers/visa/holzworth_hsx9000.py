@@ -58,6 +58,7 @@ class HolzworthHSX9000Channel(BaseInstrument):
 
     @secure_communication(2)
     def get_spec_header(self):
+        pass
         """
 
         if self.mode == 'SPEC':
