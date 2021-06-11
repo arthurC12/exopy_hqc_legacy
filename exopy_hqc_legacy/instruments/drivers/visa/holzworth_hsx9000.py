@@ -10,7 +10,7 @@
 This module defines drivers for Holzworth HSX 9000 RF synthesizer.
 :Contains:
     SpecDescriptor
-    AgilentHolzworth HSX
+    Holzworth HSX9000
 """
 from inspect import cleandoc
 import numpy as np
