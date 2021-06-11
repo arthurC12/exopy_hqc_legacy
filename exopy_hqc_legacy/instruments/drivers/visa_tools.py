@@ -17,9 +17,12 @@ except ImportError as e:
     raise ImportError(msg) from e
 
 from .driver_tools import BaseInstrument, InstrIOError
+
 import numpy as np
 
 
+# Imports used when debugging, to be deleted before commit
+# from driver_tools import BaseInstrument, InstrIOError
 class VisaInstrument(BaseInstrument):
     """Base class for drivers using the VISA library to communicate
 
@@ -102,8 +105,8 @@ class VisaInstrument(BaseInstrument):
                                             open_timeout=1000, **para)
         except errors.VisaIOError as er:
             self._driver = None
-            raise InstrIOError(str(er))
-
+            # raise InstrIOError(str(er))
+            raise InstrIOError(self.connection_str)
     def close_connection(self):
         """Close the connection to the instr.
 
