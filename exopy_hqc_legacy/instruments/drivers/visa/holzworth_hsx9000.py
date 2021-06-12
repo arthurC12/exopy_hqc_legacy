@@ -250,7 +250,16 @@ class HolzworthHSX9000Channel(BaseInstrument):
             return result == 'ON'
         else:
             raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
-
+    
+    
+    @instrument_property
+    @secure_communication
+    def temp(self):
+        result = self.query(':CH{}:TEMP?'.format(self._channel))
+        if result:
+            return 'Channel #{} temperature: {}'.format(self._channel, result)
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return temperature of the channel #{}'''.format(self._channel)))   
 
 class Holzworth9000(VisaInstrument):
     """
@@ -263,7 +272,8 @@ class Holzworth9000(VisaInstrument):
     def __init__(self, connection_info, caching_allowed=True,
                  caching_permissions={}, auto_open=True):
         super(Holzworth9000, self).__init__(connection_info, caching_allowed, caching_permissions, auto_open)
-        self.channels = {}
+        self.num_channels = 0
+        self.defined_channels = None
 
     def open_connection(self, **para):
         """Open the connection to the instr using the `connection_str`.
@@ -274,15 +284,113 @@ class Holzworth9000(VisaInstrument):
         self.read_termination = '\n'
         # clearing buffers to avoid running into queue overflow
         self.write('*CLS')
-
+        '''
+        defining number of channels of the HSX
+        *IDN? returns 'Holzworth Instrumentation, HSX9004A, '
+        HSX9001 -> 1 channel
+        HSX9002 -> 2 channels
+        HSX9003 -> 3 channels
+        HSX9004 -> 4 channels
+        '''
+        result = self.query('*IDN?')
+        if result:
+            hsx = result.find('HSX')
+            if hsx != -1:
+                try:
+                    model = int(result[hsx+3 : hsx+7])
+                except ValueError:
+                    raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+                num_channels = model % 10
+                self.defined_channels = list(range(1, num_channels + 1))
+            else:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+        raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
+    
     def get_channel(self, num):
-        """
         if num not in self.defined_channels:
             return None
-        """
         if num in self.channels:
             return self.channels[num]
         else:
             channel = HolzworthHSX9000Channel(self, num)
             self.channels[num] = channel
             return channel
+    
+    
+    @secure_communication()    
+    def reset(self):
+        result = self.query('*RST')
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not perform reset'''))            
+    
+    @instrument_property
+    @secure_communication()
+    def reference(self):
+        result = self.query(':REF:STATUS?')
+        if result:
+            return result
+        else:
+             raise InstrIOError(cleandoc('''Holzworth HSX did not return reference status'''))            
+    
+    @reference.setter
+    @secure_communication()
+    def reference(self, value):
+        '''
+        Set the reference frequency
+        ----------
+        value : str
+            possible values: EXT100, 100EXT, EXT10, 10EXT, INT100, 100INT, INT10, 10INT for 100/10 MHz external/internal
+
+        Returns
+        -------
+        None.
+
+        '''
+        values = {'100EXT': 'EXT:100MHz',
+                  '100INT': 'INT:100MHz',
+                  '10EXT': 'EXT:10MHz',
+                  '10INT': 'INT:10MHz',
+                  'EXT100': 'EXT:100MHz',
+                  'INT100': 'INT:100MHz',
+                  'EXT10': 'EXT:10MHz',
+                  '10INT10': 'INT:10MHz'}
+        if value in values.keys():
+            result = self.query (':REF:{}'.format(values[value]))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not set reference'''))
+        else:
+            raise InstrIOError(cleandoc('''Incorrect reference specified, \
+                                        allowed values EXT100, 100EXT, EXT10, 10EXT, INT100, 100INT, INT10, 10INT'''))
+                                        
+    
+    @instrument_property
+    @secure_communication()
+    def pll(self):
+        result = self.query(':REF:PLL?')
+        if result:
+            return result
+        raise InstrIOError(cleandoc('''Holzworth HSX did not return PLL status'''))
+        
+        
+    @instrument_property
+    @secure_communication
+    def temp(self):
+        result = self.query(':TEMP?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return temperature'''))   
+            
+    @secure_communication
+    def diag(self):
+        result = self.query(':HSX:DIAG:MIN:START')
+        if result:
+            return result
+        raise InstrIOError(cleandoc('''Holzworth HSX did not run diagnostics'''))
+    
+    @secure_communication
+    def status(self):
+        result = self.query(':HSX:DIAG:DONE?')
+        if result:
+            return result
+        raise InstrIOError(cleandoc('''Holzworth HSX did not return diagnostics status'''))    
