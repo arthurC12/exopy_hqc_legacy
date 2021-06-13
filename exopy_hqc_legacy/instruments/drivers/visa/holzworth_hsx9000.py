@@ -131,19 +131,21 @@ class HolzworthHSX9000Channel(BaseInstrument):
         '''
         Set Channel Output Frequency
         '''
-        if type(value) == str:
+        if type(value) != str:
+            value = '{}MHz'.format(value/10**6)
+        else:
             if value.endswith('Hz'):
                 pass
-        else:
-            value = '{}MHz'.format(value/10**6)
-            self.write(':CH{}:FREQ:{}'.format(self._channel, value))
-            result = self.query(':CH{}:FREQ?'.format(self._channel))
-            if not result:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
+            else:
+                raise InstrIOError(cleandoc('''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
+        self.write(':CH{}:FREQ:{}'.format(self._channel, value))
+        result = self.query(':CH{}:FREQ?'.format(self._channel))
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
 
     @instrument_property
     @secure_communication()
-    def minimum_frequency(self):
+    def min_frequency(self):
         result = self.query(':CH{}:FREQ:MIN?'.format(self._channel))
         if result:
             value = float(result.split(' ')[0])
@@ -162,7 +164,7 @@ class HolzworthHSX9000Channel(BaseInstrument):
 
     @instrument_property
     @secure_communication()
-    def get_maximum_frequency(self):
+    def max_frequency(self):
         result = self.query(':CH{}:FREQ:MAX?'.format(self._channel))
         if result:
             value = float(result.split(' ')[0])
@@ -231,13 +233,13 @@ class HolzworthHSX9000Channel(BaseInstrument):
             raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
 
     @secure_communication()
-    def output_on(self):
+    def on(self):
         result = self.write(":CH{}:PWR:RF:ON".format(self._channel))
         if not result:
             raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
 
     @secure_communication()
-    def output_off(self):
+    def off(self):
         result = self.write(":CH{}:PWR:RF:OFF".format(self._channel))
         if not result:
             raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
@@ -274,6 +276,7 @@ class Holzworth9000(VisaInstrument):
         super(Holzworth9000, self).__init__(connection_info, caching_allowed, caching_permissions, auto_open)
         self.num_channels = 0
         self.defined_channels = None
+        self.channels = {}
 
     def open_connection(self, **para):
         """Open the connection to the instr using the `connection_str`.
