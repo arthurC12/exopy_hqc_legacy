@@ -9,13 +9,259 @@
 """
 This module defines drivers for Holzworth HSX 9000 RF synthesizer.
 :Contains:
-    SpecDescriptor
+    Holzworth HSX9000 Channel
     Holzworth HSX9000
 """
 from inspect import cleandoc
 from ..driver_tools import (InstrIOError, secure_communication, instrument_property)
 from ..visa_tools import VisaInstrument, BaseInstrument
 from visa import VisaTypeError
+
+
+class HolzworthHSX9000Channel(BaseInstrument):
+    """
+    """
+    caching_permissions = {'mode': False}
+
+    def __init__(self, hsx9000, channel, caching_allowed=True, caching_permissions={}):
+        super(HolzworthHSX9000Channel, self).__init__(None, caching_allowed, caching_permissions)
+        self._channel = channel
+        self._hsx9000 = hsx9000
+
+    @instrument_property
+    @secure_communication()
+    def mode(self):
+        """
+        Query the mode of the device
+        """
+        result = self._hsx9000.query("CH{}:PWR:MODE?".format(self._channel))
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HXS did not return its mode'''))
+
+    @mode.setter
+    @secure_communication()
+    def mode(self, mode):
+        """
+        """
+        if mode.upper() in ['AUTO', 'HIGH', 'NORMAL', 'FIX']:
+            result = self._hsx9000.query("CH{}:PWR:MODE:{}".format(self._channel, mode.upper()))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HXS did not set its mode correctly'''))
+            return
+        raise VisaTypeError(cleandoc('''Incorrect mode for Holzworth HSX'''))
+
+    @instrument_property
+    @secure_communication()
+    def frequency(self):
+        """
+        Query Channel Output Frequency Setting
+        TODO: to check an actual output string
+        """
+        result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
+        if result:
+            results = result.split(' ')  # <- to check if there is a space in the output string
+            if len(results) == 2:
+                value = float(results[0])
+                suffix = results[1]
+                if suffix == 'MHz':
+                    value *= 1E6
+                elif suffix == 'GHz':
+                    value *= 1E9
+                else:
+                    raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the  output frequency'''))
+            else:
+                value = result
+            return value
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
+                     output frequency'''))
+
+    @frequency.setter
+    @secure_communication()
+    def frequency(self, value):
+        '''
+        Set Channel Output Frequency
+        '''
+        if type(value) != str:
+            value = '{}MHz'.format(value / 10**6)
+        else:
+            if value.endswith('Hz'):
+                pass
+            else:
+                raise InstrIOError(cleandoc(
+                    '''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
+        self._hsx9000.write(':CH{}:FREQ:{}'.format(self._channel, value))
+        result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
+
+    @instrument_property
+    @secure_communication()
+    def min_frequency(self):
+        """
+        Query Minimum Channel Output Frequency
+        """
+        result = self._hsx9000.query(':CH{}:FREQ:MIN?'.format(self._channel))
+        if result:
+            value = float(result.split(' ')[0])
+            suffix = result.split(' ')[1]
+            if suffix == 'MHz':
+                value *= 1E6
+            elif suffix == 'GHz':
+                value *= 1E9
+            elif suffix == 'kHz':
+                value *= 1E3
+            return value
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
+                     minimum  output frequency'''))
+
+    @instrument_property
+    @secure_communication()
+    def max_frequency(self):
+        """
+        Query Maximum Channel Output Frequency
+        """
+        result = self._hsx9000.query(':CH{}:FREQ:MAX?'.format(self._channel))
+        if result:
+            value = float(result.split(' ')[0])
+            suffix = result.split(' ')[1]
+            if suffix == 'MHz':
+                value *= 1E6
+            elif suffix == 'GHz':
+                value *= 1E9
+            elif suffix == 'kHz':
+                value *= 1E3
+            return value
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
+                     maximum  output frequency'''))
+
+    @instrument_property
+    @secure_communication()
+    def power(self):
+        """
+        Query Channel Output Power Setting
+        """
+        result = self._hsx9000.query(':CH{}:PWR?'.format(self._channel))
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output power'''))
+
+    @power.setter
+    @secure_communication()
+    def power(self, power):
+        """
+        Set Channel Output Power
+        """
+        if type(power) == int:
+            result = self._hsx9000.query(":CH{}:PWR:{}dBm".format(self._channel, power))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output power'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect power value given to device'''))
+
+    @instrument_property
+    @secure_communication()
+    def phase(self):
+        """
+        Query Channel Output Phase Offset Setting
+        """
+        result = self._hsx9000.query(':CH{}:PHASE?'.format(self._channel))
+        if result:
+            try:
+                value = float(result.split(' ')[0])
+                return value
+            except ValueError:
+                return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
+
+    @phase.setter
+    @secure_communication()
+    def phase(self, phase):
+        """
+        Set Channel Output Phase Offset
+        """
+        self._hsx9000.write(":CH{}:PHASE:{}".format(self._channel, phase))
+        result = self._hsx9000.query(':CH{}:PHASE?'.format(self._channel))
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output phase'''))
+
+    @instrument_property
+    @secure_communication
+    def phase_max(self):
+        """
+        Query Channel Maximum Phase Offset Setting for Current Output Frequency
+        """
+        result = self._hsx9000.query(':CH{}:PHASE:MAX?'.format(self._channel))
+        if result:
+            try:
+                value = float(result.split(' ')[0])
+                return value
+            except ValueError:
+                return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
+
+    @instrument_property
+    @secure_communication
+    def phase_resolution(self):
+        """
+        Query Channel Maximum Phase Offset Resolution Setting for Current Output Frequency
+        """
+        result = self._hsx9000.query(':CH{}:PHASE:RES?'.format(self._channel))
+        if result:
+            try:
+                value = float(result.split(' ')[0])
+                return value
+            except ValueError:
+                return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
+
+    @secure_communication()
+    def on(self):
+        """
+        Set Channel RF Output ON
+        """
+        result = self._hsx9000.query(":CH{}:PWR:RF:ON".format(self._channel))
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not power on the output'''))
+
+    @secure_communication()
+    def off(self):
+        """
+        Set Channel RF Output OFF
+        """
+        result = self._hsx9000.query(":CH{}:PWR:RF:OFF".format(self._channel))
+        if not result:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not power off the output'''))
+
+    @instrument_property
+    @secure_communication()
+    def output_status(self):
+        """
+        Query Channel RF Output Status
+        """
+        result = self._hsx9000.query(":CH{}:PWR:RF?".format(self._channel))
+        if result:
+            return result == 'ON'
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return channel output status'''))
+
+    @instrument_property
+    @secure_communication
+    def temp(self):
+        result = self._hsx9000.query(':CH{}:TEMP?'.format(self._channel))
+        if result:
+            return 'Channel #{} temperature: {}'.format(self._channel, result)
+        else:
+            raise InstrIOError(
+                cleandoc('''Holzworth HSX did not return temperature of the channel #{}'''.format(self._channel)))
 
 
 class Holzworth9000(VisaInstrument):
@@ -146,6 +392,9 @@ class Holzworth9000(VisaInstrument):
     @instrument_property
     @secure_communication
     def temp(self):
+        """
+        Query device temperature
+        """
         result = self.query(':TEMP?')
         if result:
             return result
@@ -154,6 +403,9 @@ class Holzworth9000(VisaInstrument):
             
     @secure_communication
     def diag(self):
+        """
+        Runs self-minidiagnostics
+        """
         result = self.query(':HSX:DIAG:MIN:START')
         if result:
             return result
@@ -161,6 +413,10 @@ class Holzworth9000(VisaInstrument):
     
     @secure_communication
     def status(self):
+        """
+        Returns status of self-minidiagnostics
+        """
+
         result = self.query(':HSX:DIAG:DONE?')
         if result:
             return result
@@ -246,7 +502,7 @@ class Holzworth9000(VisaInstrument):
     @secure_communication
     def gpib_eoiwlc(self, value):
         """
-        Set Instrument GPIB to always return a response
+        Set Instrument GPIB EOI with last character
         """
         if value in ['ON', 'OFF', 'on', 'off']:
             result = self.query('GPIB:EOIWLC:{}'.format(value))
@@ -403,234 +659,3 @@ class Holzworth9000(VisaInstrument):
         else:
             raise InstrIOError(cleandoc('''Holzworth HSX did not return Board information'''))
 
-
-class HolzworthHSX9000Channel(BaseInstrument):
-    """
-    """
-    caching_permissions = {'mode': False}
-
-    def __init__(self, hsx9000, channel, caching_allowed=True, caching_permissions={}):
-        super(HolzworthHSX9000Channel, self).__init__(None, caching_allowed, caching_permissions)
-        self._channel = channel
-        self._hsx9000 = hsx9000
-
-    @instrument_property
-    @secure_communication()
-    def mode(self):
-        """
-        """
-        result = self._hsx9000.query("CH{}:PWR:MODE?".format(self._channel))
-        if result:
-            return result
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HXS did not return its mode'''))
-
-    @mode.setter
-    @secure_communication()
-    def mode(self, mode):
-        """
-        """
-        if mode.upper() in ['AUTO', 'HIGH', 'NORMAL', 'FIX']:
-            result = self._hsx9000.query("CH{}:PWR:MODE:{}".format(self._channel, mode.upper()))
-            if not result:
-                raise InstrIOError(cleandoc('''Holzworth HXS did not set its mode correctly'''))
-            return
-        raise VisaTypeError(cleandoc('''Incorrect mode for Holzworth HSX'''))
-
-    @instrument_property
-    @secure_communication()
-    def frequency(self):
-        """
-        Query Channel Output Frequency Setting
-        TODO: to check an actual output string
-        """
-        result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
-        if result:
-            value = float(result.split(' ')[0])
-            suffix = result.split[1]
-            if suffix == 'MHz':
-                value *= 1E6
-            elif suffix == 'GHz':
-                value *= 1E9
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     output frequency'''))
-            return value
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     output frequency'''))
-
-    @frequency.setter
-    @secure_communication()
-    def frequency(self, value):
-        '''
-        Set Channel Output Frequency
-        '''
-        if type(value) != str:
-            value = '{}MHz'.format(value / 10 ** 6)
-        else:
-            if value.endswith('Hz'):
-                pass
-            else:
-                raise InstrIOError(cleandoc(
-                    '''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
-        self._hsx9000.write(':CH{}:FREQ:{}'.format(self._channel, value))
-        result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
-
-    @instrument_property
-    @secure_communication()
-    def min_frequency(self):
-        """
-        Query Minimum Channel Output Frequency
-        """
-        result = self._hsx9000.query(':CH{}:FREQ:MIN?'.format(self._channel))
-        if result:
-            value = float(result.split(' ')[0])
-            suffix = result.split[1]
-            if suffix == 'MHz':
-                value *= 1E6
-            elif suffix == 'GHz':
-                value *= 1E9
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     minimum  output frequency'''))
-            return value
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     minimum  output frequency'''))
-
-    @instrument_property
-    @secure_communication()
-    def max_frequency(self):
-        """
-        Query Maximum Channel Output Frequency
-        """
-        result = self._hsx9000.query(':CH{}:FREQ:MAX?'.format(self._channel))
-        if result:
-            value = float(result.split(' ')[0])
-            suffix = result.split[1]
-            if suffix == 'MHz':
-                value *= 1E6
-            elif suffix == 'GHz':
-                value *= 1E9
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     maximum  output frequency'''))
-            return value
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     maximum  output frequency'''))
-
-    @instrument_property
-    @secure_communication()
-    def power(self):
-        """
-        Query Channel Output Power Setting
-        """
-        result = self._hsx9000.query(':CH{}:PWR?'.format(self._channel))
-        if result:
-            return result
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output power'''))
-
-    @power.setter
-    @secure_communication()
-    def power(self, power):
-        """
-        Set Channel Output Power
-        """
-        if type(power) == int:
-            result = self._hsx9000.query(":CH{}:PWR:{}dBm".format(self._channel, power))
-            if not result:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output power'''))
-        else:
-            raise VisaTypeError(cleandoc('''Incorrect power value given to device'''))
-
-    @instrument_property
-    @secure_communication()
-    def phase(self):
-        """
-        Query Channel Output Phase Offset Setting
-        """
-        result = self._hsx9000.query(':CH{}:PHASE?'.format(self._channel))
-        if result:
-            return result
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
-
-    @phase.setter
-    @secure_communication()
-    def phase(self, phase):
-        """
-        Set Channel Output Phase Offset
-        """
-        self._hsx9000.write(":CH{}:PHASE:{}".format(self._channel, phase))
-        result = self._hsx9000.query(':CH{}:PHASE?'.format(self._channel))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output phase'''))
-
-    @instrument_property
-    @secure_communication
-    def phase_max(self):
-        """
-        Query Channel Maximum Phase Offset Setting for Current Output Frequency
-        """
-        result = self._hsx9000.query(':CH{}:PHASE:MAX?'.format(self._channel))
-        if result:
-            return result
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
-
-    @instrument_property
-    @secure_communication
-    def phase_resolution(self):
-        """
-        Query Channel Maximum Phase Offset Resolution Setting for Current Output Frequency
-        """
-        result = self._hsx9000.query(':CH{}:PHASE:RES?'.format(self._channel))
-        if result:
-            return result
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output phase'''))
-
-    @secure_communication()
-    def on(self):
-        """
-        Set Channel RF Output ON
-        """
-        result = self._hsx9000.query(":CH{}:PWR:RF:ON".format(self._channel))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not power on the output'''))
-
-    @secure_communication()
-    def off(self):
-        """
-        Set Channel RF Output OFF
-        """
-        result = self._hsx9000.query(":CH{}:PWR:RF:OFF".format(self._channel))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not power off the output'''))
-
-    @instrument_property
-    @secure_communication()
-    def output_status(self):
-        """
-        Query Channel RF Output Status
-        """
-        result = self._hsx9000.query(":CH{}:PWR:RF?".format(self._channel))
-        if result:
-            return result == 'ON'
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return channel output status'''))
-
-    @instrument_property
-    @secure_communication
-    def temp(self):
-        result = self._hsx9000.query(':CH{}:TEMP?'.format(self._channel))
-        if result:
-            return 'Channel #{} temperature: {}'.format(self._channel, result)
-        else:
-            raise InstrIOError(
-                cleandoc('''Holzworth HSX did not return temperature of the channel #{}'''.format(self._channel)))
