@@ -15,73 +15,18 @@ This module defines drivers for Holzworth HSX 9000 RF synthesizer.
 from inspect import cleandoc
 import numpy as np
 from ..driver_tools import (InstrIOError, secure_communication, instrument_property)
-from ..visa_tools import VisaInstrument, BaseInstrument
+from ..visa_tools import VisaInstrument
+from visa import VisaTypeError
 
 
-'''
-DATA_FORMATTING_DICT = {'raw I/Q data': 0,
-                        'descriptor': 1,
-                        '(I,Q) vs time': 3,
-                        'log(mag) vs freq': 4,
-                        'average of log(mag) vs freq': 7,
-                        'mag vs freq in Vrms': 11,
-                        'average of mag vs freq in Vrms': 12}
-
-
-class SpecDescriptor():
-    def __init__(self):
-        self.initialized = False
-        self.FFTpeak = 0
-        self.FFTfreq = 0
-        self.FFTnbrSteps = 2
-        self.Firstfreq = 0
-        self.Freqstep = 0
-        self.TimenbrSteps = 2
-        self.firsttime = 0
-        self.TimeStep = 0.1
-        self.timedomaincheck = 1
-        self.totaltime = 1.0
-        self.averagenbr = 1
-'''
-
-class HolzworthHSX9000Channel(BaseInstrument):
+class HolzworthHSX9000Channel(VisaInstrument):
     """
     """
-    caching_permissions = {'start_frequency_SA': False,
-                           'stop_frequency_SA': False,
-                           'mode': False}
+    caching_permissions = {'mode': False}
 
     def __init__(self, channel, connection_info, caching_allowed=True, caching_permissions={}, auto_open=True):
         super(HolzworthHSX9000Channel, self).__init__(connection_info, caching_allowed, caching_permissions, auto_open)
         self._channel = channel
-        #self.spec_header = SpecDescriptor()
-
-    @secure_communication(2)
-    def get_spec_header(self):
-        pass
-        """
-
-        if self.mode == 'SPEC':
-            answer = self.query_ascii_values("FETCH:SPEC1?")
-            if answer:
-                self.spec_header.initialized = True
-                self.spec_header.FFTpeak = answer[0]
-                self.spec_header.FFTfreq = answer[1]/1e9
-                self.spec_header.FFTnbrSteps = answer[2]
-                self.spec_header.Firstfreq = answer[3]/1e9
-                self.spec_header.Freqstep = answer[4]/1e9
-                self.spec_header.TimenbrSteps = answer[5]
-                self.spec_header.firsttime = answer[6]
-                self.spec_header.TimeStep = answer[7]
-                self.spec_header.timedomaincheck = answer[8]
-                self.spec_header.totaltime = answer[9]
-                self.spec_header.averagenbr = answer[10]
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HXS did not return its
-                        mode'''))
-        else:
-            raise '''Holzworth HSX is not in Spectrum mode'''
-        """
 
     @instrument_property
     @secure_communication()
@@ -99,16 +44,20 @@ class HolzworthHSX9000Channel(BaseInstrument):
     def mode(self, mode):
         """
         """
-        if mode in ['AUTO', 'HIGH', 'NORMAL', 'FIX']:
-            result = self.query("CH{}:PWR:MODE:{}".format(self._channel, mode))
+        if mode.upper() in ['AUTO', 'HIGH', 'NORMAL', 'FIX']:
+            result = self.query("CH{}:PWR:MODE:{}".format(self._channel, mode.upper()))
             if not result:
                 raise InstrIOError(cleandoc('''Holzworth HXS did not set its mode correctly'''))
             return
-        raise InstrIOError(cleandoc('''Incorrect mode for Holzworth HXS'''))
+        raise VisaTypeError(cleandoc('''Incorrect mode for Holzworth HSX'''))
 
     @instrument_property
     @secure_communication()
     def frequency(self):
+        """
+        Query Channel Output Frequency Setting
+        TODO: to check an actual output string
+        """
         result = self.query(':CH{}:FREQ?'.format(self._channel))
         if result:
             value = float(result.split(' ')[0])
@@ -146,6 +95,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def min_frequency(self):
+        """
+        Query Minimum Channel Output Frequency
+        """
         result = self.query(':CH{}:FREQ:MIN?'.format(self._channel))
         if result:
             value = float(result.split(' ')[0])
@@ -165,6 +117,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def max_frequency(self):
+        """
+        Query Maximum Channel Output Frequency
+        """
         result = self.query(':CH{}:FREQ:MAX?'.format(self._channel))
         if result:
             value = float(result.split(' ')[0])
@@ -184,6 +139,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def power(self):
+        """
+        Query Channel Output Power Setting
+        """
         result = self.query(':CH{}:PWR?'.format(self._channel))
         if result:
             return result
@@ -193,13 +151,22 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @power.setter
     @secure_communication()
     def power(self, power):
-        result = self.write(":CH{}:PWR:{}dBm".format(self._channel, power))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output power'''))
+        """
+        Set Channel Output Power
+        """
+        if type(power) == int:
+            result = self.write(":CH{}:PWR:{}dBm".format(self._channel, power))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output power'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect power value given to device'''))
 
     @instrument_property
     @secure_communication()
     def phase(self):
+        """
+        Query Channel Output Phase Offset Setting
+        """
         result = self.query(':CH{}:PHASE?'.format(self._channel))
         if result:
             return result
@@ -209,6 +176,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @phase.setter
     @secure_communication()
     def phase(self, phase):
+        """
+        Set Channel Output Phase Offset
+        """
         self.write(":CH{}:PHASE:{}".format(self._channel, phase))
         result = self.query(':CH{}:PHASE?'.format(self._channel))
         if not result:
@@ -217,6 +187,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @instrument_property
     @secure_communication
     def phase_max(self):
+        """
+        Query Channel Maximum Phase Offset Setting for Current Output Frequency
+        """
         result = self.query(':CH{}:PHASE:MAX?'.format(self._channel))
         if result:
             return result
@@ -226,6 +199,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @instrument_property
     @secure_communication
     def phase_resolution(self):
+        """
+        Query Channel Maximum Phase Offset Resolution Setting for Current Output Frequency
+        """
         result = self.query(':CH{}:PHASE:RES?'.format(self._channel))
         if result:
             return result
@@ -234,24 +210,33 @@ class HolzworthHSX9000Channel(BaseInstrument):
 
     @secure_communication()
     def on(self):
-        result = self.write(":CH{}:PWR:RF:ON".format(self._channel))
+        """
+        Set Channel RF Output ON
+        """
+        result = self.query(":CH{}:PWR:RF:ON".format(self._channel))
         if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
+            raise InstrIOError(cleandoc('''Holzworth HSX did not power on the output'''))
 
     @secure_communication()
     def off(self):
-        result = self.write(":CH{}:PWR:RF:OFF".format(self._channel))
+        """
+        Set Channel RF Output OFF
+        """
+        result = self.query(":CH{}:PWR:RF:OFF".format(self._channel))
         if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
+            raise InstrIOError(cleandoc('''Holzworth HSX did not power off the output'''))
 
     @instrument_property
     @secure_communication()
     def output_status(self):
-        result = self.write(":CH{}:PWR:RF?".format(self._channel))
+        """
+        Query Channel RF Output Status
+        """
+        result = self.query(":CH{}:PWR:RF?".format(self._channel))
         if result:
             return result == 'ON'
         else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not powered on the output'''))
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return channel output status'''))
     
     
     @instrument_property
@@ -310,6 +295,9 @@ class Holzworth9000(VisaInstrument):
         raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
     
     def get_channel(self, num):
+        """
+        Returns the channel object
+        """
         if num not in self.defined_channels:
             return None
         if num in self.channels:
@@ -322,6 +310,9 @@ class Holzworth9000(VisaInstrument):
     
     @secure_communication()    
     def reset(self):
+        """
+        Reset the device
+        """
         result = self.query('*RST')
         if not result:
             raise InstrIOError(cleandoc('''Holzworth HSX did not perform reset'''))            
@@ -329,6 +320,9 @@ class Holzworth9000(VisaInstrument):
     @instrument_property
     @secure_communication()
     def reference(self):
+        """
+        Query status of the reference
+        """
         result = self.query(':REF:STATUS?')
         if result:
             return result
@@ -369,6 +363,9 @@ class Holzworth9000(VisaInstrument):
     @instrument_property
     @secure_communication()
     def pll(self):
+        """
+        Query status of the PLL
+        """
         result = self.query(':REF:PLL?')
         if result:
             return result
@@ -396,4 +393,241 @@ class Holzworth9000(VisaInstrument):
         result = self.query(':HSX:DIAG:DONE?')
         if result:
             return result
-        raise InstrIOError(cleandoc('''Holzworth HSX did not return diagnostics status'''))    
+        raise InstrIOError(cleandoc('''Holzworth HSX did not return diagnostics status'''))
+
+    @instrument_property
+    @secure_communication
+    def gpib(self):
+        """
+        Query Instrument GPIB Address
+        """
+        result = self.query('GPIB:ADDR?')
+        if result:
+            ''' expected: GPIB Address: N'''
+            try:
+                addr = int(result.split(':')[1])
+                return addr
+            except ValueError:
+                return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its GPIB address'''))
+
+    @gpib.setter
+    @secure_communication
+    def gpib(self, addr):
+        """
+        Set Instrument GPIB Address
+        """
+        if type(addr) == int and (0 <= addr <= 30):
+            self.write(':GPIB:ADDR:{}'.format(addr))
+            result = self.query('GPIB:ADDR?')
+            if result:
+                ''' expected: GPIB Address: N'''
+                try:
+                    set_addr = int(result.split(':')[1])
+                    if not set_addr == addr:
+                        InstrIOError(cleandoc('''Holzworth HSX did not set its GPIB address correctly'''))
+                except ValueError:
+                    pass
+            else:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not return its GPIB address'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect address given to Holzworth HSX'''))
+
+    @instrument_property
+    @secure_communication
+    def gpib_respond(self):
+        """
+        Query Instrument GPIB respond
+        """
+        result = self.query('GPIB:RESPOND?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return GPIB respond status'''))
+
+    @gpib_respond.setter
+    @secure_communication
+    def gpib_respond(self, value):
+        """
+        Set Instrument GPIB to always return a response
+        """
+        if value in ['ON', 'OFF', 'on', 'off']:
+            result = self.query('GPIB:RESPOND:{}'.format(value))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not return GPIB respond status'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect response value given to Holzworth HSX'''))
+
+    @instrument_property
+    @secure_communication
+    def gpib_eoiwlc(self):
+        """
+        Query Instrument GPIB EOI with last character
+        """
+        result = self.query(':GPIB:EOIWLC?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return GPIB End-Of-Input status'''))
+
+    @gpib_eoiwlc.setter
+    @secure_communication
+    def gpib_eoiwlc(self, value):
+        """
+        Set Instrument GPIB to always return a response
+        """
+        if value in ['ON', 'OFF', 'on', 'off']:
+            result = self.query('GPIB:EOIWLC:{}'.format(value))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not return GPIB End-Of-Input status'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect response value given to Holzworth HSX'''))
+
+
+
+    @instrument_property
+    @secure_communication
+    def comm_respond(self):
+        """
+        Query Ethernet, USB, and RS-232 response status
+        """
+        result = self.query('COMM:RESPOND?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its respond status'''))
+
+    @comm_respond.setter
+    @secure_communication
+    def comm_respond(self, value):
+        """
+        Set Ethernet, USB, and RS-232 response status
+        """
+        if type(value) == str:
+            if value.upper in ['ON', 'OFF']:
+                result = self.query('COMM:RESPOND:{}'.format(value.upper()))
+                if not result:
+                    raise InstrIOError(cleandoc('''Holzworth HSX did not return its respond status'''))
+            else:
+                raise VisaTypeError(cleandoc('''Incorrect response value given to Holzworth HSX'''))
+        raise VisaTypeError(cleandoc('''Incorrect response value given to Holzworth HSX'''))
+
+    @instrument_property
+    @secure_communication
+    def ip_address(self):
+        """
+        Query Instrument Static IP Address
+        """
+        result = self.query('IP:ADDR?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its IP address'''))
+
+    @ip_address.setter
+    @secure_communication
+    def ip_address(self, addr):
+        """
+        set instrument static IP address
+        """
+        if type(addr) == str:
+            values = addr.split('.')
+            if len(values) == 4:
+                try:
+                    values_num = [int(value) for value in values]
+                except ValueError:
+                    raise VisaTypeError(cleandoc('''Incorrect address given to Holzworth HSX'''))
+                self.query('IP:ADDR:{}'.format(addr))
+
+    @instrument_property
+    @secure_communication
+    def ip_gateway(self):
+        """
+        Query Instrument GAteway Address
+        """
+        result = self.query('IP:GATEWAY?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its IP gateway'''))
+
+    @ip_gateway.setter
+    @secure_communication
+    def ip_gateway(self, addr):
+        """
+        set instrument IP gateway
+        """
+        if type(addr) == str:
+            values = addr.split('.')
+            if len(values) == 4:
+                try:
+                    values_num = [int(value) for value in values]
+                except ValueError:
+                    raise VisaTypeError(cleandoc('''Incorrect gateway given to Holzworth HSX'''))
+                self.query('IP:GATEWAY:{}'.format(addr))
+
+    @instrument_property
+    @secure_communication
+    def ip_subnet(self):
+        """
+        Query Instrument Subnet mask Address
+        """
+        result = self.query('IP:SUBNET?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its IP gateway'''))
+
+    @ip_subnet.setter
+    @secure_communication
+    def ip_subnet(self, addr):
+        """
+        set instrument subnet mask address
+        """
+        if type(addr) == str:
+            values = addr.split('.')
+            if len(values) == 4:
+                try:
+                    values_num = [int(value) for value in values]
+                except ValueError:
+                    raise VisaTypeError(cleandoc('''Incorrect subnet mask given to Holzworth HSX'''))
+                self.query('IP:SUBNET:{}'.format(addr))
+
+    @instrument_property
+    @secure_communication
+    def ip_status(self):
+        """
+        Query Instrument IP Status
+        """
+        result = self.query('IP:STATUS?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return its IP status'''))
+
+    @ip_status.setter
+    @secure_communication
+    def ip_status(self, value):
+        """
+        Toggle Instrument Static/Dynamic IP Address
+        """
+        if type(value) == str:
+            if value.upper() in ['DHCP', 'STATIC']:
+                self.query('IP:STATUS:{}'.format(value.upper()))
+            else:
+                raise VisaTypeError(cleandoc('''Incorrect IP address status given'''))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect IP address status given'''))
+
+    @instrument_property
+    @secure_communication
+    def diag_info(self):
+        """
+        Query board information
+        """
+        result = self.query(':DIAG:INFO:BOARDS?')
+        if result:
+            return result
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return Board information'''))
