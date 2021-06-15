@@ -32,7 +32,7 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @secure_communication()
     def mode(self):
         """
-        Query the mode of the device
+        Query the mode of the channel
         """
         result = self._hsx9000.query("CH{}:PWR:MODE?".format(self._channel))
         if result:
@@ -44,6 +44,7 @@ class HolzworthHSX9000Channel(BaseInstrument):
     @secure_communication()
     def mode(self, mode):
         """
+        Set the operating mode the the channel
         """
         if mode.upper() in ['AUTO', 'HIGH', 'NORMAL', 'FIX']:
             result = self._hsx9000.query("CH{}:PWR:MODE:{}".format(self._channel, mode.upper()))
@@ -69,29 +70,27 @@ class HolzworthHSX9000Channel(BaseInstrument):
                     value *= 1E6
                 elif suffix == 'GHz':
                     value *= 1E9
+                elif suffix == 'kHz':
+                    value *= 1E3
                 else:
                     raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the  output frequency'''))
             else:
                 value = result
             return value
         else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the
-                     output frequency'''))
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return correctly the output frequency'''))
 
     @frequency.setter
     @secure_communication()
     def frequency(self, value):
-        '''
+        """
         Set Channel Output Frequency
-        '''
+        """
         if type(value) != str:
             value = '{}MHz'.format(value / 10**6)
         else:
-            if value.endswith('Hz'):
-                pass
-            else:
-                raise InstrIOError(cleandoc(
-                    '''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
+            if not value.endswith('Hz'):
+                raise InstrIOError(cleandoc('''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
         self._hsx9000.write(':CH{}:FREQ:{}'.format(self._channel, value))
         result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
         if not result:
@@ -302,7 +301,7 @@ class Holzworth9000(VisaInstrument):
             hsx = result.find('HSX')
             if hsx != -1:
                 try:
-                    model = int(result[hsx+3 : hsx+7])
+                    model = int(result[hsx+3:hsx+7])
                 except ValueError:
                     raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
                 num_channels = model % 10
@@ -344,12 +343,12 @@ class Holzworth9000(VisaInstrument):
         if result:
             return result
         else:
-             raise InstrIOError(cleandoc('''Holzworth HSX did not return reference status'''))            
+            raise InstrIOError(cleandoc('''Holzworth HSX did not return reference status'''))
     
     @reference.setter
     @secure_communication()
     def reference(self, value):
-        '''
+        """
         Set the reference frequency
         ----------
         value : str
@@ -359,7 +358,7 @@ class Holzworth9000(VisaInstrument):
         -------
         None.
 
-        '''
+        """
         values = {'100EXT': 'EXT:100MHz',
                   '100INT': 'INT:100MHz',
                   '10EXT': 'EXT:10MHz',
@@ -397,6 +396,10 @@ class Holzworth9000(VisaInstrument):
         """
         result = self.query(':TEMP?')
         if result:
+            try:
+                result = float(result)
+            except ValueError:
+                pass
             return result
         else:
             raise InstrIOError(cleandoc('''Holzworth HSX did not return temperature'''))   
@@ -404,7 +407,7 @@ class Holzworth9000(VisaInstrument):
     @secure_communication
     def diag(self):
         """
-        Runs self-minidiagnostics
+        Run self-minidiagnostics
         """
         result = self.query(':HSX:DIAG:MIN:START')
         if result:
@@ -430,7 +433,7 @@ class Holzworth9000(VisaInstrument):
         """
         result = self.query('GPIB:ADDR?')
         if result:
-            ''' expected: GPIB Address: N'''
+            ''' expected: GPIB Address: N, 0 <= N <= 30'''
             try:
                 addr = int(result.split(':')[1])
                 return addr
