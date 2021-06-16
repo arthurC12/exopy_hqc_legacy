@@ -18,15 +18,20 @@ from ..visa_tools import VisaInstrument, BaseInstrument
 from visa import VisaTypeError
 
 
-class HolzworthHSX9000Channel(BaseInstrument):
+class Holzworth9000Channel(BaseInstrument):
     """
     """
     caching_permissions = {'mode': False}
 
     def __init__(self, hsx9000, channel, caching_allowed=True, caching_permissions={}):
-        super(HolzworthHSX9000Channel, self).__init__(None, caching_allowed, caching_permissions)
+        super(Holzworth9000Channel, self).__init__(None, caching_allowed, caching_permissions)
         self._channel = channel
         self._hsx9000 = hsx9000
+
+    def reopen_connection(self):
+        """
+        """
+        self._hsx9000.reopen_connection()
 
     @instrument_property
     @secure_communication()
@@ -86,8 +91,9 @@ class HolzworthHSX9000Channel(BaseInstrument):
         """
         Set Channel Output Frequency
         """
+        unit = self._hsx9000.frequency_unit
         if type(value) != str:
-            value = '{}MHz'.format(value / 10**6)
+            value = '{}{}'.format(value,unit)
         else:
             if not value.endswith('Hz'):
                 raise InstrIOError(cleandoc('''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
@@ -242,13 +248,13 @@ class HolzworthHSX9000Channel(BaseInstrument):
 
     @instrument_property
     @secure_communication()
-    def output_status(self):
+    def output(self):
         """
         Query Channel RF Output Status
         """
         result = self._hsx9000.query(":CH{}:PWR:RF?".format(self._channel))
         if result:
-            return result == 'ON'
+            return result
         else:
             raise InstrIOError(cleandoc('''Holzworth HSX did not return channel output status'''))
 
@@ -265,8 +271,24 @@ class HolzworthHSX9000Channel(BaseInstrument):
 
 class Holzworth9000(VisaInstrument):
     """
-    """
+    Generic driver for Holzworth HSX 900X SignalGenerator,
+    using the VISA library.
 
+    This driver does not give access to all the functionnality of the
+    instrument but you can extend it if needed. See the documentation of
+    the driver_tools module for more details about writing instruments
+    drivers.
+
+    Parameters
+    ----------
+    see the `VisaInstrument` parameters
+
+    Attributes
+    ----------
+    frequency_unit : str
+        Frequency unit used by the driver. The default unit is 'GHz'. Other
+        valid units are : 'MHz', 'KHz', 'Hz'
+    """
     caching_permissions = {'defined_channels': True,
                            'trigger_scope': True,
                            'data_format': True}
@@ -277,7 +299,7 @@ class Holzworth9000(VisaInstrument):
         self.num_channels = 0
         self.defined_channels = None
         self.channels = {}
-        self.connection_info = connection_info
+        self.frequency_unit = "GHz"
 
     def open_connection(self, **para):
         """Open the connection to the instr using the `connection_str`.
@@ -308,7 +330,8 @@ class Holzworth9000(VisaInstrument):
                 self.defined_channels = list(range(1, num_channels + 1))
             else:
                 raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
-        raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
+        else:
+            raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
     
     def get_channel(self, num):
         """
@@ -319,7 +342,7 @@ class Holzworth9000(VisaInstrument):
         if num in self.channels:
             return self.channels[num]
         else:
-            channel = HolzworthHSX9000Channel(self, num)
+            channel = Holzworth9000Channel(self, num)
             self.channels[num] = channel
             return channel
     
