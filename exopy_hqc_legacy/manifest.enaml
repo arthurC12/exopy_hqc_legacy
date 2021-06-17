@@ -291,7 +291,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        }
                     Driver:
                         driver = 'holzworth_hsx9000A:Holzworth9000SingleChannel'
-                        model = 'HSX9000'
+                        model = 'HSX9000A'
                         kind = 'RF source'
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
                                        'VisaRS232':
