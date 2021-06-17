@@ -289,7 +289,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                                            {'resource_class': 'INSTR'},
                                        'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
-
+                    Driver:
+                        driver = 'holzworth_hsx9000A:Holzworth9000SingleChannel'
+                        model = 'HSX9000'
+                        kind = 'RF source'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaRS232':
+                                           {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
                 Drivers:
                     manufacturer = 'Rohde and Schwarz'
                     Driver:
@@ -427,7 +435,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico',
-                                   'exopy_hqc_legacy.Legacy.Holzworth9000']
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000',
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000A']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'pna_tasks:PNASetRFFrequencyInterface'
@@ -453,7 +462,9 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.AnritsuMG3694',
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
-                                   'exopy_hqc_legacy.Legacy.Anapico']
+                                   'exopy_hqc_legacy.Legacy.Anapico',
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000',
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000A']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'pna_tasks:PNASetRFPowerInterface'
