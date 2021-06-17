@@ -287,7 +287,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
                                        'VisaRS232':
                                            {'resource_class': 'INSTR'},
-                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       'VisaTCPIP': {'resource_class': 'SOCKET'}
                                        }
                     Driver:
                         driver = 'holzworth_hsx9000A:Holzworth9000SingleChannel'
@@ -296,7 +296,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
                                        'VisaRS232':
                                            {'resource_class': 'INSTR'},
-                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       'VisaTCPIP': {'resource_class': 'SOCKET'}
                                        }
                 Drivers:
                     manufacturer = 'Rohde and Schwarz'
@@ -436,7 +436,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico',
                                    'exopy_hqc_legacy.Legacy.Holzworth9000',
-                                   'exopy_hqc_legacy.Legacy.Holzworth9000A']
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000SingleChannel']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'pna_tasks:PNASetRFFrequencyInterface'
