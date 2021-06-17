@@ -281,7 +281,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Drivers:
                     manufacturer = 'Holzworth'
                     Driver:
-                        driver = 'holzworth:HSX9000'
+                        driver = 'holzworth_hsx9000:Holzworth9000'
                         model = 'HSX9000'
                         kind = 'RF source'
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
@@ -427,7 +427,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico',
-                                   'exopy_hqc_legacy.Legacy.HolzworthHSX9000']
+                                   'exopy_hqc_legacy.Legacy.Holzworth9000']
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'pna_tasks:PNASetRFFrequencyInterface'
