@@ -15,7 +15,7 @@ This module defines drivers for Holzworth HSX 9000 RF synthesizer.
 from inspect import cleandoc
 from ..driver_tools import (InstrIOError, secure_communication, instrument_property)
 from ..visa_tools import VisaInstrument, BaseInstrument
-from visa import VisaTypeError
+from pyvisa import VisaTypeError
 
 
 class Holzworth9000Channel(BaseInstrument):
@@ -246,6 +246,7 @@ class Holzworth9000Channel(BaseInstrument):
         if not result:
             raise InstrIOError(cleandoc('''Holzworth HSX did not power off the output'''))
 
+
     @instrument_property
     @secure_communication()
     def output(self):
@@ -257,6 +258,19 @@ class Holzworth9000Channel(BaseInstrument):
             return result
         else:
             raise InstrIOError(cleandoc('''Holzworth HSX did not return channel output status'''))
+
+    @output.setter
+    @secure_communication()
+    def output(self, value):
+        """
+        Set Channel RF Output On/Off
+        """
+        if value.upper() in ['ON', 'OFF']:
+            result = self._hsx9000.query(":CH{}:PWR:RF:{}".format(self._channel, value))
+            if not result:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not power {} the output'''.format(value)))
+        else:
+            raise VisaTypeError(cleandoc('''Incorrect value given to device, allowed: ON, OFF'''))
 
     @instrument_property
     @secure_communication
@@ -288,6 +302,8 @@ class Holzworth9000(VisaInstrument):
     frequency_unit : str
         Frequency unit used by the driver. The default unit is 'GHz'. Other
         valid units are : 'MHz', 'KHz', 'Hz'
+     frequency_unit : str
+        Phase unit used by the driver. The default unit is 'Deg'.
     """
     caching_permissions = {'defined_channels': True,
                            'trigger_scope': True,
@@ -300,6 +316,7 @@ class Holzworth9000(VisaInstrument):
         self.defined_channels = None
         self.channels = {}
         self.frequency_unit = "GHz"
+        self.phase_unit = "Deg"
 
     def open_connection(self, **para):
         """Open the connection to the instr using the `connection_str`.
