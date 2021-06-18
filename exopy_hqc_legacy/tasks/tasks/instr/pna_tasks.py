@@ -87,7 +87,45 @@ class PNASetRFFrequencyInterface(TaskInterface):
         tb.update(res[1])
         return test and res[0], tb
 
+class PNASetRFPhaseInterface(TaskInterface):
+    """Set the central frequency to be used for the specified channel.
 
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+
+    #: Driver for the channel.
+    channel_driver = Value()
+
+    def perform(self, phase=None):
+        """Set the central frequency of the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        if phase is None:
+            phase = task.format_and_eval_string(task.phase)
+            phase = task.convert(phase, 'Deg')
+
+        self.channel_driver.phase = phase
+        task.write_in_database('phase', phase)
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(PNASetRFPhaseInterface,
+                         self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb
+        
 class PNASetRFPowerInterface(TaskInterface):
     """Set the central power to be used for the specified channel.
 
@@ -136,6 +174,47 @@ class PNASetRFPowerInterface(TaskInterface):
         tb.update(res[1])
         return test and res[0], tb
 
+class PNASetRFOnOffInterface(TaskInterface):
+    """Set the central frequency to be used for the specified channel.
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+
+    #: Driver for the channel.
+    channel_driver = Value()
+
+    def perform(self, switch=None):
+        """Set the central frequency of the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        if switch is None:
+            switch = task.format_and_eval_string(task.switch)
+        
+        if switch == 'On' or switch == 1:
+            self.channel_driver.output = 'On'
+            task.write_in_database('output', 1)
+        else:#if switch == 'Off' or switch == 0:
+            self.channel_driver.output = 'Off'
+            task.write_in_database('output', 0)
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(PNASetRFOnOffInterface,
+                         self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb
 
 class SingleChannelPNATask(InstrumentTask):
     """Helper class managing the notion of channel in the PNA.

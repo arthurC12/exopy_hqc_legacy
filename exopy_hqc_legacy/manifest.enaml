@@ -248,7 +248,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                                      'lan_device_name': 'inst0'},
                                        'VisaRaw': {}
                                        }
-
                 Drivers:
                     manufacturer = 'WindfreakTech'
                     Driver:
@@ -340,7 +339,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                     driver = 'sp_adq14:SPADQ14'
                     manufacturer = 'SPDevices'
                     model = 'ADQ14'
-
                 Driver:
                     driver = 'alazar935x:Alazar935x'
                     manufacturer = 'AlazarTech'
@@ -435,7 +433,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico',
-                                   'exopy_hqc_legacy.Legacy.Holzworth9000',
                                    'exopy_hqc_legacy.Legacy.Holzworth9000SingleChannel']
                     metadata = {'loopable': True}
                     Interface:
@@ -445,7 +442,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
                                        'exopy_hqc_legacy.Legacy.ZNB20',
                                        'exopy_hqc_legacy.Legacy.ZVA24',
-                                       'exopy_hqc_legacy.Legacy.Holzworth9000']
+									   'exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
@@ -464,7 +461,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.LabBrickLMS103',
                                    'exopy_hqc_legacy.Legacy.RohdeSchwarzSMB100A',
                                    'exopy_hqc_legacy.Legacy.Anapico',
-                                   'exopy_hqc_legacy.Legacy.Holzworth9000',
                                    'exopy_hqc_legacy.Legacy.Holzworth9000SingleChannel']
                     metadata = {'loopable': True}
                     Interface:
@@ -475,7 +471,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.pna_task_views:IPNAPortValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
                                        'exopy_hqc_legacy.Legacy.ZNB20',
-                                       'exopy_hqc_legacy.Legacy.ZVA24']
+                                       'exopy_hqc_legacy.Legacy.ZVA24',
+                                       'exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
@@ -508,6 +505,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                         views = ['views.anapico_task_views:IAnapicoChannelLabel',
                                  'views.anapico_task_views:IAnapicoChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
+                    Interface:
+                        interface = 'pna_tasks:PNASetRFOnOffInterface'
+                        views = ['views.pna_task_views:IPNAChannelLabel',
+                                 'views.pna_task_views:IPNAChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'rf_tasks:SetPulseModulationTask'
                     view = 'views.rf_views:PulseModulationView'
@@ -524,6 +526,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPSG',
                                    'exopy_hqc_legacy.Legacy.Holzworth9000SingleChannel']
                     metadata = {'loopable': True}
+                    Interface:
+                        interface = 'pna_tasks:PNASetRFPhaseInterface'
+                        views = ['views.pna_task_views:IPNAChannelLabel',
+                                 'views.pna_task_views:IPNAChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'pna_tasks:PNASinglePointMeasureTask'
                     view = 'views.pna_task_views:PNASinglePointView'
