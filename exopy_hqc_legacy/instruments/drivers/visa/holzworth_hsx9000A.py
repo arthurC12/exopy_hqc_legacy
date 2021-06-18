@@ -503,11 +503,12 @@ class Holzworth9000SingleChannel(VisaInstrument):
         """
         Set Channel Output Power
         """
-        if type(power) == int:
+        try:
+            power = float(power)
             result = self.query(":CH{}:PWR:{}dBm".format(self._channel, power))
             if not result:
                 raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output power'''))
-        else:
+        except ValueError:
             raise VisaTypeError(cleandoc('''Incorrect power value given to device'''))
 
     @instrument_property
