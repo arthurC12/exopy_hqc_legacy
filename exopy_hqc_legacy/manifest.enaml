@@ -441,8 +441,12 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.pna_task_views:IPNAChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
                                        'exopy_hqc_legacy.Legacy.ZNB20',
-                                       'exopy_hqc_legacy.Legacy.ZVA24',
-									   'exopy_hqc_legacy.Legacy.Holzworth9000']
+                                       'exopy_hqc_legacy.Legacy.ZVA24']
+                    Interface:
+                        interface = 'mc_tasks:MCSetRFFrequencyInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
@@ -471,8 +475,12 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.pna_task_views:IPNAPortValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
                                        'exopy_hqc_legacy.Legacy.ZNB20',
-                                       'exopy_hqc_legacy.Legacy.ZVA24',
-                                       'exopy_hqc_legacy.Legacy.Holzworth9000']
+                                       'exopy_hqc_legacy.Legacy.ZVA24']
+                    Interface:
+                        interface = 'mc_tasks:MCSetRFPowerInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
                         views = ['views.synthHD_task_views:ISynthHDChannelLabel',
@@ -506,9 +514,9 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.anapico_task_views:IAnapicoChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
                     Interface:
-                        interface = 'pna_tasks:PNASetRFOnOffInterface'
-                        views = ['views.pna_task_views:IPNAChannelLabel',
-                                 'views.pna_task_views:IPNAChannelValue']
+                        interface = 'mc_tasks:MCSetRFOnOffInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'rf_tasks:SetPulseModulationTask'
@@ -527,9 +535,9 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.Holzworth9000SingleChannel']
                     metadata = {'loopable': True}
                     Interface:
-                        interface = 'pna_tasks:PNASetRFPhaseInterface'
-                        views = ['views.pna_task_views:IPNAChannelLabel',
-                                 'views.pna_task_views:IPNAChannelValue']
+                        interface = 'mc_tasks:MCSetRFPhaseInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'pna_tasks:PNASinglePointMeasureTask'
@@ -570,7 +578,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                      'MultiChannelVoltageSourceInterface')
                         views = ['views.dc_views:'
                                  'MultiChannelVoltageSourceILabelModule',
-								 'views.dc_views:'
+                                 'views.dc_views:'
                                  'MultiChannelVoltageSourceIModule',
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceILabel',

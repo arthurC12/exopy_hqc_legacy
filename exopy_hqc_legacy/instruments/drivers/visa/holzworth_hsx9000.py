@@ -328,33 +328,35 @@ class Holzworth9000(VisaInstrument):
         self.read_termination = '\n'
         # clearing buffers to avoid running into queue overflow
         self.write('*CLS')
-        '''
-        defining number of channels of the HSX
-        *IDN? returns 'Holzworth Instrumentation, HSX9004A, '
-        HSX9001 -> 1 channel
-        HSX9002 -> 2 channels
-        HSX9003 -> 3 channels
-        HSX9004 -> 4 channels
-        '''
-        result = self.query('*IDN?')
-        if result:
-            hsx = result.find('HSX')
-            if hsx != -1:
-                try:
-                    model = int(result[hsx+3:hsx+7])
-                except ValueError:
-                    raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
-                num_channels = model % 10
-                self.defined_channels = list(range(1, num_channels + 1))
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
-        else:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
+
     
     def get_channel(self, num):
         """
         Returns the channel object
         """
+        if not self.defined_channels:
+            '''
+            defining number of channels of the HSX
+            *IDN? returns 'Holzworth Instrumentation, HSX9004A, '
+            HSX9001 -> 1 channel
+            HSX9002 -> 2 channels
+            HSX9003 -> 3 channels
+            HSX9004 -> 4 channels
+            '''
+            result = self.query('*IDN?')
+            if result:
+                hsx = result.find('HSX')
+                if hsx != -1:
+                    try:
+                        model = int(result[hsx + 3:hsx + 7])
+                    except ValueError:
+                        raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+                    num_channels = model % 10
+                    self.defined_channels = list(range(1, num_channels + 1))
+                else:
+                    raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+            else:
+                raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
         if num not in self.defined_channels:
             return None
         if num in self.channels:
