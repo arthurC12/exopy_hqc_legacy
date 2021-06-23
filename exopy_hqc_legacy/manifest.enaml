@@ -298,6 +298,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'VisaTCPIP': {'resource_class': 'SOCKET'}
                                        }
                 Drivers:
+                    manufacturer = 'QDevil'
+                    Driver:
+                        driver = 'qdac:QDac'
+                        model = 'QDac'
+                        kind = 'DC source'
+                        connections = {'VisaRS232': {'resource_class': 'INSTR'}
+                                      }
+
+                Drivers:
                     manufacturer = 'Rohde and Schwarz'
                     Driver:
                         driver = 'rohde_and_schwarz_vna:ZNB20'
@@ -584,7 +593,9 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'MultiChannelVoltageSourceILabel',
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceIChannel']
-                        instruments = ['exopy_hqc_legacy.Legacy.TinyBilt']
+                        instruments = ['exopy_hqc_legacy.Legacy.TinyBilt',
+                                       'exopy_hqc_legacy.Legacy.QDac']
+
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'
                     view = 'views.dc_views:GetDcVoltageView'
