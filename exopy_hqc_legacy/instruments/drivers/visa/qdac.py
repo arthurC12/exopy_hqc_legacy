@@ -55,6 +55,9 @@ class QDacChannel(BaseInstrument):
         """
         self._check(self._QDac.query(b"set %d %g" % (self._channel, value))).decode("utf-8")
 
+    def read_voltage_dc(self):
+        return self.voltage
+
     @instrument_property
     @secure_communication()
     def current(self):
@@ -193,6 +196,7 @@ class QDac(VisaInstrument):
 class QDacSingleChannel(VisaInstrument):
     """
     """
+
     caching_permissions = {'defined_channels': True}
     secure_com_except = (InvalidSession, InstrIOError, VisaIOError)
 
@@ -226,12 +230,16 @@ class QDacSingleChannel(VisaInstrument):
             value = float(response.strip())
         return value
 
+
     @voltage.setter
     @secure_communication()
     def voltage(self, value):
         """Output value setter method
         """
         self._check(self.query(b"set %d %g" % (self._channel, value))).decode("utf-8")
+
+    def read_voltage_dc(self):
+        return self.voltage
 
     @instrument_property
     @secure_communication()

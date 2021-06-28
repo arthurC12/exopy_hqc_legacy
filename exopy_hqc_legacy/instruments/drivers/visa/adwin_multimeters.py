@@ -9,11 +9,11 @@
 """Drivers for Adwin multimeters using VISA library.
 
 """
-from ..driver_tools import (InstrIOError, secure_communication)
+from ..driver_tools import (InstrIOError, secure_communication, instrument_property)
 from ..visa_tools import VisaInstrument
 
 
-class AdwinSDM3055(VisaInstrument):
+class Adwin3055(VisaInstrument):
     """
     Driver for an Adwin/SIGLENT SDM3055/SDM3055A multimeter, using the VISA library.
 
@@ -44,21 +44,27 @@ class AdwinSDM3055(VisaInstrument):
         """Open the connection to the instr using the `connection_str`.
 
         """
-        super(AdwinSDM3055, self).open_connection(**para)
+        super(Adwin3055, self).open_connection(**para)
         self.write_termination = '\n'
         self.read_termination = '\n'
 
+    @instrument_property
+    @secure_communication
+    def voltage(self):
+        return self.read_voltage_dc()
 
     @secure_communication()
     def read_voltage_dc(self, mes_range='AUTO'):
         """Return the DC voltage measured by the instrument
         """
+        mes_range = 'AUTO'
         instruction = "MEASure:VOLTage:DC? {}"
         value = self.query(instruction.format(mes_range))
         if value:
             return float(value)
         else:
             raise InstrIOError('DC voltage measure failed')
+
 
     @secure_communication()
     def read_voltage_ac(self, mes_range='AUTO'):
@@ -83,10 +89,16 @@ class AdwinSDM3055(VisaInstrument):
         else:
             raise InstrIOError('Resistance measure failed')
 
+    @instrument_property
+    @secure_communication
+    def current(self):
+        return self.read_current_dc()
+
     @secure_communication()
-    def read_current_dc(self, mes_range='AUTO'):
+    def read_current_dc(self):
         """Return the DC current measured by the instrument
         """
+        mes_range = 'AUTO'
         instruction = "MEASure:CURRent:DC? {}"
         value = self.query(instruction.format(mes_range))
         if value:

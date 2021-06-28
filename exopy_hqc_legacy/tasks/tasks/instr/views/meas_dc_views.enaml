@@ -12,7 +12,7 @@
 from textwrap import fill
 
 from enaml.widgets.api import (GroupBox, Label, Field, ObjectCombo)
-from enaml.stdlib.fields import FloatField
+from enaml.stdlib.fields import FloatField, IntField
 from enaml.layout.api import factory
 
 from exopy_hqc_legacy.utils.layouts import auto_grid_layout
@@ -44,3 +44,33 @@ enamldef MeasDCCurrView(InstrView): view:
         value := task.wait_time
         tool_tip = fill("Time to wait before querying values from the "
                         "amperemeter.", 60)
+
+enamldef MultiChannelChannelLabel(Label):
+    """Label for the channel selection.
+
+    """
+    attr interface
+    attr root
+    attr index = 2
+    text = 'Channel'
+
+
+enamldef MultiChannelChannelValue(IntField):
+    """Value for the channel selection.
+
+    """
+    attr interface
+    attr root
+    hug_width = 'strong'
+    value := interface.channel
+
+enamldef MultiChannelDCVoltageSourceIChannel(IntField):
+    """Value for the multi channel interface.
+
+    """
+    attr interface
+    attr root
+    hug_width = 'medium'
+    value << interface.channel[1]
+    value ::
+        interface.channel = (interface.channel[0], change['value'])

@@ -183,6 +183,16 @@ enamldef HqcLegacyManifest(PluginManifest):
                                            {'resource_class': 'INSTR'}
                                        }
                 Drivers:
+                    manufacturer = 'Adwin'
+                    Driver:
+                        driver = 'adwin_multimeters:Adwin3055'
+                        model = '3055'
+                        kind = 'Multimeter'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaRS232':
+                                           {'resource_class': 'INSTR'}
+                                       }
+                Drivers:
                     manufacturer = 'Oxford'
                     Driver:
                         driver = 'oxford_ips:IPS12010'
@@ -440,11 +450,14 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.Agilent34410A',
                                    'exopy_hqc_legacy.Legacy.Yokogawa7651',
                                    'exopy_hqc_legacy.Legacy.YokogawaGS200',
+                                   'exopy_hqc_legacy.Legacy.Adwin3055',
                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    metadata = {'loopable': True}
                 Task:
                     task = 'meas_dc_tasks:MeasDCCurrentTask'
                     view = 'views.meas_dc_views:MeasDCCurrView'
-                    instruments = ['exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    instruments = ['exopy_hqc_legacy.Legacy.QDacSingleChannel',
+                                   'exopy_hqc_legacy.Legacy.Adwin3055']
                     metadata = {'loopable': True}
                 Task:
                     task = 'rf_tasks:SetRFFrequencyTask'
@@ -612,7 +625,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'
                     view = 'views.dc_views:GetDcVoltageView'
-                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651']
+                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651',
+                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCCurrentTask'
