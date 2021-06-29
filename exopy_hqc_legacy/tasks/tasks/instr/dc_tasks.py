@@ -17,6 +17,33 @@ from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple)
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
 
+def check_channels_presence(task, channels, *args, **kwargs):
+    """ Check that all the channels are correctly defined on the PNA.
+
+    """
+    if kwargs.get('test_instr'):
+        traceback = {}
+        err_path = task.get_error_path()
+        with task.test_driver() as instr:
+            if instr is None:
+                return False, traceback
+            channels_present = True
+            for channel in channels:
+                if channel not in instr.defined_channels:
+                    key = err_path + '_' + str(channel)
+                    msg = ("Channel {} is not defined in the {}."
+                           " Please define it yourself and try again.")
+                    traceback[key] = msg.format(channel,
+                                                task.selected_instrument[0])
+
+                    channels_present = False
+
+            return channels_present, traceback
+
+    else:
+        return True, {}
+
+
 class GetDCVoltageTask(InstrumentTask):
     """Get the current DC voltage of an instrument
     """
@@ -342,3 +369,191 @@ class SetDCOutputTask(InterfaceableTaskMixin, InstrumentTask):
         elif self.switch == 'OFF':
             self.driver.output = 'OFF'
             self.write_in_database('output', 'OFF')
+
+
+class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set a DC voltage to the specified value.
+    """
+    #: Target value for the source (dynamically evaluated)
+    value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
+    wait_time = Float().tag(pref=True)
+    database_entries = set_default({'voltage': 0.01})
+    def perform(self, value=None):
+        value = self.format_and_eval_string(self.value)
+        self.driver.voltage = value
+        self.write_in_database('voltage', value)
+
+
+class MultiChannelSetVoltageInterface(TaskInterface):
+    """Set the central frequency to be used for the specified channel.
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+    channel_driver = Value()
+
+    def perform(self, value=None):
+        """Set the central frequency of the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        if value is None:
+            value = task.format_and_eval_string(task.value)
+
+        self.channel_driver.voltage = value
+        task.write_in_database('voltage', value)
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(MultiChannelSetVoltageInterface, self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb
+
+
+class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set a DC voltage to the specified value.
+    """
+    #: Target value for the source (dynamically evaluated)
+    value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
+    wait_time = Float().tag(pref=True)
+    database_entries = set_default({'current': 0.01})
+    def perform(self, value=None):
+        value = self.format_and_eval_string(self.value)
+        self.driver.current = value
+        self.write_in_database('current', value)
+
+
+class MultiChannelSetCurrentInterface(TaskInterface):
+    """Set the central frequency to be used for the specified channel.
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+    channel_driver = Value()
+
+    def perform(self, value=None):
+        """Set the central frequency of the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        if value is None:
+            value = task.format_and_eval_string(task.value)
+
+        self.channel_driver.current = value
+        task.write_in_database('current', value)
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(MultiChannelSetCurrentInterface, self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb
+
+
+class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
+    """Set a DC voltage to the specified value.
+    """
+    #: Target value for the source (dynamically evaluated)
+    value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
+    wait_time = Float().tag(pref=True)
+    database_entries = set_default({'voltage': 0.01})
+
+    def perform(self,):
+        value = self.driver.voltage
+        self.write_in_database('voltage', float(value))
+
+
+class MultiChannelGetVoltageInterface(TaskInterface):
+    """Set the central frequency to be used for the specified channel.
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+    channel_driver = Value()
+
+    def perform(self):
+        """Get the voltage from the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+        value = self.channel_driver.voltage
+        task.write_in_database('voltage', float(value))
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(MultiChannelGetVoltageInterface, self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb
+
+
+class GetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
+    """Get the current
+    """
+    #: Target value for the source (dynamically evaluated)
+    wait_time = Float().tag(pref=True)
+    database_entries = set_default({'current': 0.01})
+
+    def perform(self):
+        value = self.driver.current
+        self.write_in_database('current', float(value))
+
+
+class MultiChannelGetCurrentInterface(TaskInterface):
+    """Get the current from the specified channel.
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    channel = Int(1).tag(pref=True)
+    channel_driver = Value()
+
+    def perform(self):
+        """Set the central frequency of the specified channel.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        value = self.channel_driver.current
+        task.write_in_database('current', float(value))
+
+    def check(self, *args, **kwargs):
+        """Make sure the specified channel does exists on the instrument.
+
+        """
+        test, tb = super(MultiChannelGetCurrentInterface, self).check(*args, **kwargs)
+        task = self.task
+        res = check_channels_presence(task, [self.channel], *args, **kwargs)
+        tb.update(res[1])
+        return test and res[0], tb

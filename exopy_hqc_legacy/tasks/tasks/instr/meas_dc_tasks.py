@@ -11,7 +11,7 @@
 """
 from time import sleep
 
-from atom.api import Float, Int, Value, set_default
+from atom.api import Float, Int, Value, set_default, List
 
 from exopy.tasks.api import InstrumentTask, InterfaceableTaskMixin, TaskInterface
 
@@ -81,7 +81,7 @@ class MultiChannelMeasDCVoltageInterface(TaskInterface):
     # channel_driver = Value()
     # wait_time = Float().tag(pref=True)
     # database_entries = set_default({'voltage': 1.0})
-
+    defined_channels = List()
     def perform(self):
         """Set the voltage of the specified channel.
 
@@ -99,12 +99,12 @@ class MultiChannelMeasDCVoltageInterface(TaskInterface):
         """Make sure the specified channel does exist on the instrument.
 
         """
+        self.defined_channels = self.task.driver.defined_channels
         test, tb = super(MultiChannelMeasDCVoltageInterface,self).check(*args, **kwargs)
         task = self.task
         res = check_channels_presence(task, [self.channel], *args, **kwargs)
         tb.update(res[1])
         return test and res[0], tb
-
 
 
 class MeasDCCurrentTask(InstrumentTask):

@@ -656,3 +656,45 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'run_awg:RunAWGTask'
                     view = 'views.run_awg_views:RunAWGView'
                     instruments = ['exopy_hqc_legacy.Legacy.AWG']
+                Task:
+                    task = 'dc_tasks:GetVoltageTask'
+                    view = 'views.dc_views:GetVoltageView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Adwin3055',
+                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    metadata = {'loopable': True}
+                    Interface:
+                        interface = 'dc_tasks:MultiChannelGetVoltageInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+                Task:
+                    task = 'dc_tasks:SetVoltageTask'
+                    view = 'views.dc_views:SetVoltageView'
+                    instruments = ['exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    metadata = {'loopable': True}
+                    Interface:
+                        interface = 'dc_tasks:MultiChannelSetVoltageInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+                Task:
+                    task = 'dc_tasks:GetCurrentTask'
+                    view = 'views.dc_views:GetCurrentView'
+                    instruments = ['exopy_hqc_legacy.Legacy.Adwin3055',
+                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    metadata = {'loopable': True}
+                    Interface:
+                        interface = 'dc_tasks:MultiChannelGetCurrentInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+                Task:
+                    task = 'dc_tasks:SetCurrentTask'
+                    view = 'views.dc_views:SetCurrentView'
+                    instruments = ['exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    metadata = {'loopable': True}
+                    Interface:
+                        interface = 'dc_tasks:MultiChannelSetCurrentInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']

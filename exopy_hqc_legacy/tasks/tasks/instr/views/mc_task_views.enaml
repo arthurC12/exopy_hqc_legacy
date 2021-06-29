@@ -43,5 +43,6 @@ enamldef MCChannelValue(IntField):
     """
     attr interface
     attr root
+    value = 1
     hug_width = 'strong'
     value := interface.channel
