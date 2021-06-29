@@ -13,7 +13,7 @@ from time import sleep
 
 from atom.api import Float, Int, Value, set_default
 
-from exopy.tasks.api import InstrumentTask, TaskInterface
+from exopy.tasks.api import InstrumentTask, InterfaceableTaskMixin, TaskInterface
 
 
 
@@ -44,7 +44,7 @@ def check_channels_presence(task, channels, *args, **kwargs):
         return True, {}
 
 
-class MeasDCVoltageTask(InstrumentTask):
+class MeasDCVoltageTask(InterfaceableTaskMixin,InstrumentTask):
     """Measure a dc voltage.
 
     Wait for any parallel operation before execution and then wait the
@@ -78,9 +78,9 @@ class MultiChannelMeasDCVoltageInterface(TaskInterface):
     # Channel
     channel = Int(1).tag(pref=True)
     #: Driver for the channel.
-    channel_driver = Value()
-    wait_time = Float().tag(pref=True)
-    database_entries = set_default({'voltage': 1.0})
+    # channel_driver = Value()
+    # wait_time = Float().tag(pref=True)
+    # database_entries = set_default({'voltage': 1.0})
 
     def perform(self):
         """Set the voltage of the specified channel.
@@ -89,12 +89,11 @@ class MultiChannelMeasDCVoltageInterface(TaskInterface):
         task = self.task
         if not self.channel_driver:
             self.channel_driver = task.driver.get_channel(self.channel)
-
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
-        sleep(self.wait_time)
-        voltage = self.channel_driver.read_voltage_dc()
-        task.write_in_database('voltage', voltage)
+        sleep(task.wait_time)
+        value = self.channel_driver.voltage#read_voltage_dc()
+        task.write_in_database('voltage', value)
 
     def check(self, *args, **kwargs):
         """Make sure the specified channel does exist on the instrument.

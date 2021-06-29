@@ -45,6 +45,25 @@ enamldef MeasDCCurrView(InstrView): view:
         tool_tip = fill("Time to wait before querying values from the "
                         "amperemeter.", 60)
 
+enamldef MultiChannelMeasDCVoltView(InstrView): view:
+    """View for the DCVoltMeasTask.
+
+    """
+    constraints = [factory(auto_grid_layout)]
+
+    Label:
+        text = 'Channel'
+    IntField:
+        value := task.channel
+        tool_tip = fill("Channel #", 60)
+    Label:
+        text = 'Wait (s)'
+    FloatField:
+        value := task.wait_time
+        tool_tip = fill("Time to wait before querying values from the "
+                        "voltmeter.", 60)
+
+
 enamldef MultiChannelChannelLabel(Label):
     """Label for the channel selection.
 

@@ -453,6 +453,11 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.Adwin3055',
                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
                     metadata = {'loopable': True}
+                    Interface:
+                        interface = 'meas_dc_tasks:MultiChannelMeasDCVoltageInterface'
+                        views = ['views.mc_task_views:MCChannelLabel',
+                                 'views.mc_task_views:MCChannelValue']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
                 Task:
                     task = 'meas_dc_tasks:MeasDCCurrentTask'
                     view = 'views.meas_dc_views:MeasDCCurrView'
@@ -625,8 +630,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'
                     view = 'views.dc_views:GetDcVoltageView'
-                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651',
-                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCCurrentTask'
@@ -652,4 +656,3 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'run_awg:RunAWGTask'
                     view = 'views.run_awg_views:RunAWGView'
                     instruments = ['exopy_hqc_legacy.Legacy.AWG']
-                    
