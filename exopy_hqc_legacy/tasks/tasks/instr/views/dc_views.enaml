@@ -232,7 +232,25 @@ enamldef SetVoltageView(InstrView): view:
     """View for the GetVoltageTask.
 
     """
+    attr in_loop : bool = False
+
     constraints = [factory(auto_grid_layout)]
+
+    Conditional:
+        condition << not in_loop
+        Label:
+            text = 'Voltage (V)'
+        QtLineCompleter:
+            hug_width = 'ignore'
+            text := task.value
+            entries_updater << task.list_accessible_database_entries
+            tool_tip = EVALUATER_TOOLTIP
+
+    Label:
+        text = 'Unit (not implemented)'
+    ObjectCombo:
+        items << list(task.get_member('unit').items)
+        selected := task.unit
 
     Label:
         text = 'Wait (s)'
@@ -245,7 +263,24 @@ enamldef SetCurrentView(InstrView): view:
     """View for the GetCurrentTask.
 
     """
+    attr in_loop : bool = False
+
     constraints = [factory(auto_grid_layout)]
+
+    Conditional:
+        condition << not in_loop
+        Label:
+            text = 'Current (A)'
+        QtLineCompleter:
+            hug_width = 'medium'
+            text := task.value
+            entries_updater << task.list_accessible_database_entries
+            tool_tip = EVALUATER_TOOLTIP
+    Label:
+        text = 'Unit (not implemented)'
+    ObjectCombo:
+        items << list(task.get_member('unit').items)
+        selected := task.unit
 
     Label:
         text = 'Wait (s)'

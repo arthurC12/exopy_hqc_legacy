@@ -377,6 +377,7 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     #: Target value for the source (dynamically evaluated)
     value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
     wait_time = Float().tag(pref=True)
+    unit = Enum('V', 'mV', 'μV').tag(pref=True)
     database_entries = set_default({'voltage': 0.01})
     def perform(self, value=None):
         value = self.format_and_eval_string(self.value)
@@ -386,7 +387,7 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
 
 
 class MultiChannelSetVoltageInterface(TaskInterface):
-    """Set the central frequency to be used for the specified channel.
+    """Set a DC voltage to the specified value for the specified channel.
 
     """
     #: Id of the channel whose central frequency should be set.
@@ -422,12 +423,14 @@ class MultiChannelSetVoltageInterface(TaskInterface):
 
 
 class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
-    """Set a DC voltage to the specified value.
+    """Set a DC Current to the specified value.
     """
     #: Target value for the source (dynamically evaluated)
     value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
     wait_time = Float().tag(pref=True)
+    unit = Enum('A', 'mA', 'μA', 'nA').tag(pref=True)
     database_entries = set_default({'current': 0.01})
+
     def perform(self, value=None):
         value = self.format_and_eval_string(self.value)
         time.sleep(self.wait_time)
@@ -436,7 +439,7 @@ class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
 
 
 class MultiChannelSetCurrentInterface(TaskInterface):
-    """Set the central frequency to be used for the specified channel.
+    """Set a DC Current to the specified value for the specified channel.
 
     """
     #: Id of the channel whose central frequency should be set.
@@ -538,7 +541,7 @@ class MultiChannelGetCurrentInterface(TaskInterface):
     #: Id of the channel whose central frequency should be set.
     channel = Int(1).tag(pref=True)
     channel_driver = Value()
-    
+
     def perform(self):
         """Set the central frequency of the specified channel.
 
