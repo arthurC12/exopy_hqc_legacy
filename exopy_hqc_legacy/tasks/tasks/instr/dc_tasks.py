@@ -12,7 +12,7 @@
 import time
 import numbers
 
-from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple)
+from atom.api import (Float, Value, Str, Int, List, set_default, Enum, Tuple)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
@@ -380,6 +380,7 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     database_entries = set_default({'voltage': 0.01})
     def perform(self, value=None):
         value = self.format_and_eval_string(self.value)
+        time.sleep(self.wait_time)
         self.driver.voltage = value
         self.write_in_database('voltage', value)
 
@@ -405,7 +406,7 @@ class MultiChannelSetVoltageInterface(TaskInterface):
 
         if value is None:
             value = task.format_and_eval_string(task.value)
-
+        time.sleep(task.wait_time)
         self.channel_driver.voltage = value
         task.write_in_database('voltage', value)
 
@@ -429,6 +430,7 @@ class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     database_entries = set_default({'current': 0.01})
     def perform(self, value=None):
         value = self.format_and_eval_string(self.value)
+        time.sleep(self.wait_time)
         self.driver.current = value
         self.write_in_database('current', value)
 
@@ -477,7 +479,8 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     wait_time = Float().tag(pref=True)
     database_entries = set_default({'voltage': 0.01})
 
-    def perform(self,):
+    def perform(self):
+        time.sleep(self.wait_time)
         value = self.driver.voltage
         self.write_in_database('voltage', float(value))
 
@@ -500,6 +503,7 @@ class MultiChannelGetVoltageInterface(TaskInterface):
 
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
+        time.sleep(task.wait_time)
         value = self.channel_driver.voltage
         task.write_in_database('voltage', float(value))
 
@@ -522,6 +526,7 @@ class GetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     database_entries = set_default({'current': 0.01})
 
     def perform(self):
+        time.sleep(self.wait_time)
         value = self.driver.current
         self.write_in_database('current', float(value))
 
@@ -533,7 +538,7 @@ class MultiChannelGetCurrentInterface(TaskInterface):
     #: Id of the channel whose central frequency should be set.
     channel = Int(1).tag(pref=True)
     channel_driver = Value()
-
+    
     def perform(self):
         """Set the central frequency of the specified channel.
 
@@ -544,7 +549,7 @@ class MultiChannelGetCurrentInterface(TaskInterface):
 
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
-
+        time.sleep(task.wait_time)
         value = self.channel_driver.current
         task.write_in_database('current', float(value))
 

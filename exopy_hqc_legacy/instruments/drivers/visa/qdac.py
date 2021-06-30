@@ -153,7 +153,6 @@ class QDac(VisaInstrument):
     """
     caching_permissions = {'defined_channels': True}
     secure_com_except = (InvalidSession, InstrIOError, VisaIOError)
-
     def __init__(self, connection_info, caching_allowed=True,
                  caching_permissions={}, auto_open=True):
         super(QDac, self).__init__(connection_info, caching_allowed,

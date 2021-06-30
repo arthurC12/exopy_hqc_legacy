@@ -455,8 +455,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'meas_dc_tasks:MultiChannelMeasDCVoltageInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac']
                 Task:
                     task = 'meas_dc_tasks:MeasDCCurrentTask'
@@ -483,8 +483,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'exopy_hqc_legacy.Legacy.ZVA24']
                     Interface:
                         interface = 'mc_tasks:MCSetRFFrequencyInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
@@ -517,8 +517,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'exopy_hqc_legacy.Legacy.ZVA24']
                     Interface:
                         interface = 'mc_tasks:MCSetRFPowerInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                     Interface:
                         interface = 'synthHD_tasks:SynthHDsetChannelInterface'
@@ -554,8 +554,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                         instruments = ['exopy_hqc_legacy.Legacy.AnapicoMulti']
                     Interface:
                         interface = 'mc_tasks:MCSetRFOnOffInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'rf_tasks:SetPulseModulationTask'
@@ -575,8 +575,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'mc_tasks:MCSetRFPhaseInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Holzworth9000']
                 Task:
                     task = 'pna_tasks:PNASinglePointMeasureTask'
@@ -664,8 +664,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'dc_tasks:MultiChannelGetVoltageInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac']
                 Task:
                     task = 'dc_tasks:SetVoltageTask'
@@ -674,8 +674,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'dc_tasks:MultiChannelSetVoltageInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac']
                 Task:
                     task = 'dc_tasks:GetCurrentTask'
@@ -685,8 +685,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'dc_tasks:MultiChannelGetCurrentInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac']
                 Task:
                     task = 'dc_tasks:SetCurrentTask'
@@ -695,6 +695,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                     metadata = {'loopable': True}
                     Interface:
                         interface = 'dc_tasks:MultiChannelSetCurrentInterface'
-                        views = ['views.mc_task_views:MCChannelLabel',
-                                 'views.mc_task_views:MCChannelValue']
+                        views = ['views.mc_task_views:MultiChannelLabel',
+                                 'views.mc_task_views:MultiChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac']

@@ -95,7 +95,6 @@ class CSVLoadInterface(TaskInterface):
         folder = task.format_string(task.folder)
         filename = task.format_string(task.filename)
         full_path = os.path.join(folder, filename)
-
         comment_lines = 0
         with open(full_path) as f:
             while True:
