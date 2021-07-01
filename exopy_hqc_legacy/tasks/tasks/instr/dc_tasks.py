@@ -12,10 +12,11 @@
 import time
 import numbers
 
-from atom.api import (Float, Value, Str, Int, List, set_default, Enum, Tuple)
+from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
+
 
 def check_channels_presence(task, channels, *args, **kwargs):
     """ Check that all the channels are correctly defined on the PNA.
@@ -84,9 +85,6 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     safe_max = Float(0.0).tag(pref=True)
 
     #: Largest allowed delta compared to current value
-    safe_delta = Float(0.0).tag(pref=True)
-
-    #: Largest allowed delta compared to current voltage. 0 = ignored
     safe_delta = Float(0.0).tag(pref=True)
 
     #: Time to wait between changes of the output of the instr.
@@ -487,10 +485,8 @@ class MultiChannelSetCurrentInterface(TaskInterface):
 
 
 class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
-    """Set a DC voltage to the specified value.
+    """Get DC voltage from the device
     """
-    #: Target value for the source (dynamically evaluated)
-    value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
     wait_time = Float().tag(pref=True)
     database_entries = set_default({'voltage': 0.00})
 
@@ -505,7 +501,7 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
 
 
 class MultiChannelGetVoltageInterface(TaskInterface):
-    """Set the central frequency to be used for the specified channel.
+    """Get DC voltage from the device from the specified channel.
 
     """
     #: Id of the channel whose central frequency should be set.
@@ -540,7 +536,6 @@ class MultiChannelGetVoltageInterface(TaskInterface):
 class GetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     """Get the current
     """
-    #: Target value for the source (dynamically evaluated)
     wait_time = Float().tag(pref=True)
     database_entries = set_default({'current': 0.00})
 
