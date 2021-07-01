@@ -385,13 +385,14 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
         time.sleep(self.wait_time)
         self.driver.voltage = value
         self.write_in_database('voltage', value)
+
     def check(self, *args, **kwargs):
         """Add the unit into the database.
 
         """
-        test, traceback = super(SetVoltageTask, self).check(*args,
-                                                                **kwargs)
+        test, traceback = super(SetVoltageTask, self).check(*args, **kwargs)
         return test, traceback
+
 
 class MultiChannelSetVoltageInterface(TaskInterface):
     """Set a DC voltage to the specified value for the specified channel.
@@ -402,7 +403,7 @@ class MultiChannelSetVoltageInterface(TaskInterface):
     channel_driver = Value()
 
     def perform(self, value=None):
-        """Set the central frequency of the specified channel.
+        """Set the Voltage of the specified channel.
 
         """
         task = self.task
@@ -444,6 +445,10 @@ class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
         self.driver.current = value
         self.write_in_database('current', value)
 
+    def check(self, *args, **kwargs):
+        test, traceback = super(SetCurrentTask, self).check(*args, **kwargs)
+        return test, traceback
+
 
 class MultiChannelSetCurrentInterface(TaskInterface):
     """Set a DC Current to the specified value for the specified channel.
@@ -454,7 +459,7 @@ class MultiChannelSetCurrentInterface(TaskInterface):
     channel_driver = Value()
 
     def perform(self, value=None):
-        """Set the central frequency of the specified channel.
+        """Set the current output of the specified channel.
 
         """
         task = self.task
@@ -487,19 +492,15 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     #: Target value for the source (dynamically evaluated)
     value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
     wait_time = Float().tag(pref=True)
-    database_entries = set_default({'voltage': 0.01})
+    database_entries = set_default({'voltage': 0.00})
 
-    def perform(self):
+    def perform(self, value=None):
         time.sleep(self.wait_time)
         value = self.driver.voltage
         self.write_in_database('voltage', float(value))
 
     def check(self, *args, **kwargs):
-        """Add the unit into the database.
-
-        """
-        test, traceback = super(GetVoltageTask, self).check(*args,
-                                                                **kwargs)
+        test, traceback = super(GetVoltageTask, self).check(*args, **kwargs)
         return test, traceback
 
 
@@ -541,24 +542,31 @@ class GetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     """
     #: Target value for the source (dynamically evaluated)
     wait_time = Float().tag(pref=True)
-    database_entries = set_default({'current': 0.01})
+    database_entries = set_default({'current': 0.00})
 
-    def perform(self):
+    def perform(self, value=None):
         time.sleep(self.wait_time)
         value = self.driver.current
         self.write_in_database('current', float(value))
+
+    def check(self, *args, **kwargs):
+        """Add the unit into the database.
+
+        """
+        test, traceback = super(GetCurrentTask, self).check(*args, **kwargs)
+        return test, traceback
 
 
 class MultiChannelGetCurrentInterface(TaskInterface):
     """Get the current from the specified channel.
 
     """
-    #: Id of the channel whose central frequency should be set.
+    #: Id of the channel whose current has to be read
     channel = Int(1).tag(pref=True)
     channel_driver = Value()
 
-    def perform(self):
-        """Set the central frequency of the specified channel.
+    def perform(self, value=None):
+        """Read the current from the specific channel
 
         """
         task = self.task
@@ -572,7 +580,7 @@ class MultiChannelGetCurrentInterface(TaskInterface):
         task.write_in_database('current', float(value))
 
     def check(self, *args, **kwargs):
-        """Make sure the specified channel does exists on the instrument.
+        """Make sure the specified channel does exist on the instrument.
 
         """
         test, tb = super(MultiChannelGetCurrentInterface, self).check(*args, **kwargs)

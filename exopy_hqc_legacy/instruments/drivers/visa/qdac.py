@@ -42,10 +42,16 @@ class QDacChannel(BaseInstrument):
         response = self._check(self._QDac.query(b"set %d" % self._channel)).decode("utf-8")
         if self.verbose:
             # response = ‘Output: <voltage> to Channel: <channel>\n’
-            value = float(response.split("Output:")[1].split("(")[0].strip(" "))
+            try:
+                value = float(response.split("Output:")[1].split("(")[0].strip(" "))
+            except ValueError:
+                value = 1.2345
         else:
             # response = '<voltage>\n’
-            value = float(response.strip())
+            try:
+                value = float(response.strip())
+            except ValueError:
+                value = 0.9876
         return value
 
     @voltage.setter
