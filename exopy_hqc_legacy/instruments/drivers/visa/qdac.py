@@ -58,9 +58,8 @@ class QDacChannel(BaseInstrument):
     def read_voltage_dc(self):
         return self.voltage
 
-    @instrument_property
     @secure_communication()
-    def current(self):
+    def read_current_dc(self):
         """output value getter method
         """
         response = self._check(self._QDac.query(b"get %d" % self._channel)).decode("utf-8")
@@ -71,6 +70,10 @@ class QDacChannel(BaseInstrument):
             # response = ‘<current>\n’ (
             value = float(response.strip())
         return value*1E-6
+
+    @instrument_property
+    def current(self):
+        return self.read_current_dc()
 
     @instrument_property
     @secure_communication()

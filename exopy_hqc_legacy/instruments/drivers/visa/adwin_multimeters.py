@@ -36,7 +36,7 @@ class Adwin3055(VisaInstrument):
 
     Notes
     -----
-    This driver has been written for the Agilent 34410A but might work for
+    This driver has been written for the Adwin SDM3055 but might work for
     other models using the same SCPI commands.
 
     """
@@ -47,11 +47,6 @@ class Adwin3055(VisaInstrument):
         super(Adwin3055, self).open_connection(**para)
         self.write_termination = '\n'
         self.read_termination = '\n'
-
-    @instrument_property
-    @secure_communication
-    def voltage(self):
-        return self.read_voltage_dc()
 
     @secure_communication()
     def read_voltage_dc(self, mes_range='AUTO'):
@@ -64,7 +59,6 @@ class Adwin3055(VisaInstrument):
             return float(value)
         else:
             raise InstrIOError('DC voltage measure failed')
-
 
     @secure_communication()
     def read_voltage_ac(self, mes_range='AUTO'):
@@ -82,17 +76,11 @@ class Adwin3055(VisaInstrument):
         """Return the resistance measured by the instrument
         """
         instruction = "MEASure:RESistance? {},{}"
-        value = self.query(instruction.format(mes_range,
-                                                       mes_resolution))
+        value = self.query(instruction.format(mes_range, mes_resolution))
         if value:
             return float(value)
         else:
             raise InstrIOError('Resistance measure failed')
-
-    @instrument_property
-    @secure_communication
-    def current(self):
-        return self.read_current_dc()
 
     @secure_communication()
     def read_current_dc(self):
@@ -116,3 +104,11 @@ class Adwin3055(VisaInstrument):
             return float(value)
         else:
             raise InstrIOError('AC current measure failed')
+
+    @instrument_property
+    def voltage(self):
+        return self.read_voltage_dc()
+
+    @instrument_property
+    def current(self):
+        return self.read_current_dc()
