@@ -379,12 +379,19 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     wait_time = Float().tag(pref=True)
     unit = Enum('V', 'mV', 'μV').tag(pref=True)
     database_entries = set_default({'voltage': 0.01})
+
     def perform(self, value=None):
         value = self.format_and_eval_string(self.value)
         time.sleep(self.wait_time)
         self.driver.voltage = value
         self.write_in_database('voltage', value)
+    def check(self, *args, **kwargs):
+        """Add the unit into the database.
 
+        """
+        test, traceback = super(SetVoltageTask, self).check(*args,
+                                                                **kwargs)
+        return test, traceback
 
 class MultiChannelSetVoltageInterface(TaskInterface):
     """Set a DC voltage to the specified value for the specified channel.
@@ -486,6 +493,14 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
         time.sleep(self.wait_time)
         value = self.driver.voltage
         self.write_in_database('voltage', float(value))
+
+    def check(self, *args, **kwargs):
+        """Add the unit into the database.
+
+        """
+        test, traceback = super(GetVoltageTask, self).check(*args,
+                                                                **kwargs)
+        return test, traceback
 
 
 class MultiChannelGetVoltageInterface(TaskInterface):
