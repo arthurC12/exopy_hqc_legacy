@@ -29,7 +29,7 @@ class QDacChannel(BaseInstrument):
         self._channel = channel_num
         self._voltage_range = 10.0  # 10 Volts by default
         self._current_range = 100E-6  # 100 microAmps by default
-        self.verbose = False
+        self.verbose = True
 
     def reopen_connection(self, *args, **kwargs):
         self._QDac.reopen_connection(*args, **kwargs)
