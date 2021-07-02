@@ -64,7 +64,8 @@ class GetDCVoltageTask(InstrumentTask):
                        'output a voltage')
                 raise ValueError(msg.format(self.name))
 
-        current_value = getattr(self.driver, 'voltage')
+        #current_value = getattr(self.driver, 'voltage')
+        current_value = self.driver.read_voltage_dc()
         self.write_in_database('voltage', float(current_value))
 
 
@@ -184,7 +185,7 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
     """
     #: Id of the channel to use.
     channel = Tuple(default=(1, 1)).tag(pref=True)
-
+    #channel = Int(1).tag(pref=True)
     #: Reference to the driver for the channel.
     channel_driver = Value()
 
@@ -378,8 +379,11 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     unit = Enum('V', 'mV', 'μV').tag(pref=True)
     database_entries = set_default({'voltage': 0.01})
 
-    def perform(self, value=None):
-        value = self.format_and_eval_string(self.value)
+    def i_perform(self, value=None):
+        if value is None:
+            value = self.value
+        value = self.format_and_eval_string(value)
+        print('Setting voltage to {}'.format(value))
         time.sleep(self.wait_time)
         self.driver.voltage = value
         self.write_in_database('voltage', value)
@@ -490,10 +494,16 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     wait_time = Float().tag(pref=True)
     database_entries = set_default({'voltage': 0.00})
 
-    def perform(self, value=None):
+    def i_perform(self, value=None):
+        if self.driver.owner != self.name:
+            self.driver.owner = self.name
         time.sleep(self.wait_time)
-        value = self.driver.voltage
-        self.write_in_database('voltage', float(value))
+        current_value = self.driver.read_voltage_dc()
+        #getattr(self.driver, 'voltage')
+        self.write_in_database('voltage', float(current_value))
+        #time.sleep(self.wait_time)
+        #value = self.driver.voltage
+        #self.write_in_database('voltage', float(value))
 
     def check(self, *args, **kwargs):
         test, traceback = super(GetVoltageTask, self).check(*args, **kwargs)
@@ -515,7 +525,6 @@ class MultiChannelGetVoltageInterface(TaskInterface):
         task = self.task
         if not self.channel_driver:
             self.channel_driver = task.driver.get_channel(self.channel)
-
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
         time.sleep(task.wait_time)
@@ -539,7 +548,9 @@ class GetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     wait_time = Float().tag(pref=True)
     database_entries = set_default({'current': 0.00})
 
-    def perform(self, value=None):
+    def i_perform(self, value=None):
+        if self.driver.owner != self.name:
+            self.driver.owner = self.name
         time.sleep(self.wait_time)
         value = self.driver.current
         self.write_in_database('current', float(value))
@@ -567,7 +578,6 @@ class MultiChannelGetCurrentInterface(TaskInterface):
         task = self.task
         if not self.channel_driver:
             self.channel_driver = task.driver.get_channel(self.channel)
-
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
         time.sleep(task.wait_time)

@@ -398,9 +398,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                     Interface:
                         interface = 'load_tasks:CSVLoadInterface'
                         views = ['views.load_views:CSVLoadInterfaceView']
-                    Interface:
-                        interface = 'load_tasks:DATLoadInterface'
-                        views = ['views.load_views:DATLoadInterfaceView']
                 Task:
                     task = 'save_tasks:SaveTask'
                     view = 'views.save_views:SaveView'
@@ -630,7 +627,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'
                     view = 'views.dc_views:GetDcVoltageView'
-                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651']
+                    instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651',
+                                   'exopy_hqc_legacy.Legacy.QDacSingleChannel']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCCurrentTask'

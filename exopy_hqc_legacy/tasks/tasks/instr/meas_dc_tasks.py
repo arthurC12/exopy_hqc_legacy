@@ -78,7 +78,7 @@ class MultiChannelMeasDCVoltageInterface(TaskInterface):
     # Channel
     channel = Int(1).tag(pref=True)
     #: Driver for the channel.
-    # channel_driver = Value()
+    channel_driver = Value()
     # wait_time = Float().tag(pref=True)
     # database_entries = set_default({'voltage': 1.0})
     defined_channels = List()
