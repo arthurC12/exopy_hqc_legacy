@@ -49,13 +49,13 @@ class QDacChannel(BaseInstrument):
             try:
                 value = float(response.split(' ')[-1].strip())
             except ValueError:
-                value = 1.2345
+                value = response
         else:
             # response = '<voltage>\n’
             try:
                 value = float(response.strip())
             except ValueError:
-                value = 0.9876
+                value = response
         return value
 
     @voltage.setter
@@ -522,24 +522,7 @@ class QDacSingleChannel(VisaInstrument):
         """output value getter method
         """
         return self.read_voltage_dc()
-        """
-        _query = "set {}".format(self._channel)
-        response = self.check_for_error(self.query(_query))
-        if self.verbose:
-            # response = ‘Output: <voltage> to Channel: <channel>\n’
-            try:
-                value = float(response.split("Output:")[1].split("(")[0].strip(" "))
-            except ValueError:
-                value = 1.2345
-        else:
-            # response = '<voltage>\n’
-            try:
-                value = float(response.strip())
-            except ValueError:
-                value = 0.9876
-        return value
-        """
-        
+
     @secure_communication()
     def read_voltage_dc(self):
         """output value getter method
@@ -552,13 +535,13 @@ class QDacSingleChannel(VisaInstrument):
             try:
                 value = float(response.split(' ')[-1].strip())
             except ValueError:
-                value = 1.2345
+                value = response
         else:
             # response = '<voltage>\n’
             try:
                 value = float(response.strip())
             except ValueError:
-                value = 0.9876
+                raise InstrIOError("Cannot parse output from the device")
         return value
     
     @voltage.setter
@@ -567,7 +550,6 @@ class QDacSingleChannel(VisaInstrument):
         """Output value setter method
         """
         _query = "set {} {}\n".format(self._channel, value)
-        #self.check_for_error(self.query(_query))
         self.check_for_error(self.query(_query))
 
     @secure_communication()
