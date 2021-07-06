@@ -252,7 +252,7 @@ class QDac_(VisaInstrument):
         """
         super().open_connection(**para)
         # \r termination for the serial communication
-        self.write_termination = ''
+        self.write_termination = '\n'
         self.read_termination = ''
 
     def get_channel(self, num):
@@ -277,14 +277,15 @@ class QDac_(VisaInstrument):
         response = QDac.check_for_error(_query)
         return response
 
+    '''    
     def query(self, message, *args, **kwargs):
         """
         For debug purposes only; to be removed
         """
         print(message)
-        super().write('{}\n'.format(message), *args, **kwargs)
-        return super(QDac, self).query("\n")
-    
+        return super().query('{}\n'.format(message), *args, **kwargs)
+        #return super().query("\n")
+    '''
     
     @staticmethod
     def check_for_error(msg):
