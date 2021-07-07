@@ -382,7 +382,7 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     def i_perform(self, value=None):
         if value is None:
             value = self.value
-        value = self.format_and_eval_string(value)
+            value = self.format_and_eval_string(value)
         print('Setting voltage to {}'.format(value))
         time.sleep(self.wait_time)
         self.driver.voltage = value
@@ -441,8 +441,10 @@ class SetCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     unit = Enum('A', 'mA', 'μA', 'nA').tag(pref=True)
     database_entries = set_default({'current': 0.01})
 
-    def perform(self, value=None):
-        value = self.format_and_eval_string(self.value)
+    def i_perform(self, value=None):
+        if value is None:
+            value = self.value
+            value = self.format_and_eval_string(value)
         time.sleep(self.wait_time)
         self.driver.current = value
         self.write_in_database('current', value)
