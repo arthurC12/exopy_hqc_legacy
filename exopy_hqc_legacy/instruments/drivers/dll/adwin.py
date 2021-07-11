@@ -111,6 +111,52 @@ class Adwin(DllInstrument):
             measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
             return measured
 
+    def set_voltage_(self, voltage, out_channel=1, process_delay=0.00):
+        debug = False
+        if debug:
+            print('Output {}V on channel {}'.format(voltage, out_channel))
+            return 0.2*voltage
+        else:
+            output_range = 10.0
+            resolution_output = 16
+            out_bin, voltage = Adwin.convert_V_to_bin(voltage, output_range, resolution_output)
+            refresh_rate = 100 # Hz
+            self._set_Par(1, out_bin)
+            self._set_Par(2, out_channel)
+            self._set_Par(5, int(1))  # process is still running
+            self._start_process(1)  # setvoltage.tb1
+            check = True
+            while check:
+                if self._get_Par(5) == 1:
+                    time.sleep(1 / refresh_rate)
+                else:
+                    self._stop_process(1)
+                    check = False
+            self._set_Par(5, int(1))
+            time.sleep(process_delay)
+
+    def get_voltage(self, in_channel=1):
+        debug = False
+        if debug:
+            return 0.12345
+        else:
+            input_range = 10.0
+            resolution_input = 18
+            refresh_rate = 100 # Hz
+            self._set_Par(3, in_channel)
+            self._set_Par(5, int(1))  # process is still running
+            self._start_process(2)  # getvoltage.tb1
+            check = True
+            while check:
+                if self._get_Par(5) == 1:
+                    time.sleep(1 / refresh_rate)
+                    time.sleep(0.001)
+                else:
+                    self._stop_process(2)
+                    check = False
+            in_bin = self._get_Par(4)
+            measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
+            return measured
 
     def record_IV(self, Voltage, process_delay, loops_waiting, points_av, log, lin_gain, log_conversion, process_file):
         #def record_IV(self, *args, **kwargs):
