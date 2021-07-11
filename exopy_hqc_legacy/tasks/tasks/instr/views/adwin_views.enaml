@@ -1,0 +1,229 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright 2015-2018 by ExopyHqcLegacy Authors, see AUTHORS for more details.
+#
+# Distributed under the terms of the BSD license.
+#
+# The full license is in the file LICENCE, distributed with this software.
+# -----------------------------------------------------------------------------
+"""Views for the DC sources related tasks.
+
+"""
+from textwrap import fill
+
+from enaml.core.api import Conditional
+from enaml.widgets.api import (GroupBox, Label, Field, ObjectCombo, CheckBox, FileDialogEx, PushButton, Container, Window)
+from enaml.stdlib.fields import FloatField, IntField
+from enaml.layout.api import factory, hbox, align
+from exopy.tasks.api import InstrTaskView, EVALUATER_TOOLTIP
+from exopy.utils.widgets.qt_completers import QtLineCompleter
+
+from exopy_hqc_legacy.utils.layouts import auto_grid_layout
+from ...base_instr_view import InstrView
+
+enamldef RecordIVView(InstrView): view:
+    """View for the RecordIV
+
+    """
+    attr path: str = ""
+    constraints = [factory(auto_grid_layout)]
+    Label: vol0:
+        text = 'From voltage'
+    FloatField: vol0_val:
+        value := task.voltage_min
+
+    Label: vol1:
+        text = 'To voltage'
+    FloatField: vol1_val:
+        value := task.voltage_max
+
+    Label: num:
+        text = 'Number of points'
+    IntField: num_val:
+        value := task.number_of_points
+
+    Label: delay:
+        text = 'Delay'
+    FloatField: delay_val:
+        value := task.process_delay
+
+    Label: loops:
+        text = 'Loops waiting'
+    IntField: loops_val:
+        value := task.loops_waiting
+
+    Label: points_av:
+        text = 'Points avaraging'
+    IntField: points_val:
+        value := task.points_av
+
+    CheckBox:
+        text = "log (???)"
+        checked := task.log
+
+    Label: lin_gain:
+        text = 'Linear gain'
+    FloatField: gain_val:
+        value := task.lin_gain
+
+    CheckBox: log_conv:
+        text = "log conversion"
+        checked := task.log_conversion
+
+    Label: process_file:
+        text = 'Process #'
+    ObjectCombo: process_files:
+        items = [1,2,3,4,5,6,7,8,9]
+        selected := task.process_file
+
+enamldef SetVoltageView(InstrView): view:
+    """View for the RecordIV
+
+    """
+    attr path: str = ""
+    constraints = [factory(auto_grid_layout)]
+    Label: vol:
+        text = 'Output voltage'
+    FloatField: vol0_val:
+        value := task.value
+
+    Label: out_channel:
+        text = 'Output BNC'
+    ObjectCombo: out_channels:
+        items = [1,2]
+        selected := task.out_channel
+
+    Label: delay:
+        text = 'Measurement delay'
+    FloatField: delay_val:
+        value := task.process_delay
+
+    Label: in_channel:
+        text = 'Input BNC'
+    ObjectCombo: in_channels:
+        items = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+        selected := task.in_channel
+
+enamldef AdwinVoltageView(InstrView): view:
+    """View for the Adwin Set Voltage
+
+    """
+    attr interface
+    attr root
+    constraints = [factory(auto_grid_layout)]
+    Label: out_channel:
+        text = 'Output BNC'
+    ObjectCombo: out_channels:
+        items = [1,2]
+        selected := interface.out_channel
+
+    Label: in_channel:
+        text = 'Input BNC'
+    ObjectCombo: in_channels:
+        items = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+        selected := interface.in_channel
+
+enamldef AdwinOutChannelLabel(Label):
+    """Label for the multi channel interface.
+
+    """
+    attr interface
+    attr root
+    text = 'Out channel'
+
+enamldef AdwinInChannelLabel(Label):
+    """Label for the multi channel interface.
+
+    """
+    attr interface
+    attr root
+    text = 'In channel'
+
+enamldef AdwinOutChannelValue(ObjectCombo):
+    """Value for the multi channel interface.
+
+    """
+    attr interface
+    attr root
+    hug_width = 'medium'
+    items = [1,2]
+    selected := interface.out_channel
+
+enamldef AdwinInChannelValue(ObjectCombo):
+    """Value for the multi channel interface.
+
+    """
+    attr interface
+    attr root
+    hug_width = 'medium'
+    items = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    selected := interface.in_channel
+
+
+enamldef RecordIVView_(InstrView): view:
+    """View for the RecordIV
+
+    """
+    constraints = [factory(auto_grid_layout)]
+    Label: vol:
+        text = 'Voltage range'
+    FloatField: vol_val:
+        value := task.voltage
+
+    Label: num:
+        text = 'Number of points'
+    IntField: num_val:
+        value := task.number_of_points
+
+
+enamldef LoadProcessView_(InstrView): view:
+    """View for the LoadProcessTask
+
+    """
+    constraints = [factory(auto_grid_layout)]
+    Label: lbl:
+        text = 'Process file'
+    Field: fld:
+        text := task.process_name
+
+
+enamldef LoadProcessView(InstrView): view:
+    """View for the LoadProcessTask
+
+    """
+    attr path: str = ""
+    #constraints = [factory(auto_grid_layout)]
+    Label: lbl:
+        text = 'Process file'
+    Field: fld:
+        read_only = False
+        resist_width = 'ignore'
+        text := task.process_name
+    PushButton: pb:
+        text = 'Browse'
+        clicked ::
+            path = FileDialogEx.get_open_file_name(view)
+            if path:
+                view.path = path
+                fld.text = path
+
+enamldef DummyView(InstrView): view:
+    """View for the LoadProcessTask
+
+    """
+    attr path: str = ""
+    #constraints = [factory(auto_grid_layout)]
+    Label: process_file:
+        text = 'Process file'
+    Field: process_val:
+        text := task.process_file
+
+    Label: process_file2:
+        text = 'Choose file'
+    PushButton: pb:
+        text = 'Browse'
+        clicked ::
+            path = FileDialogEx.get_open_file_name(view)
+            if path:
+                view.path = path
+                process_val.text = path

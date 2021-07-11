@@ -288,3 +288,17 @@ enamldef SetCurrentView(InstrView): view:
         value := task.wait_time
         tool_tip = fill("Time to wait before querying values from the "
                         "amperemeter.", 60)
+
+enamldef SetDummyView(InstrView): view:
+    """View for the GetCurrentTask.
+
+    """
+    attr in_loop : bool = False
+
+    constraints = [factory(auto_grid_layout)]
+
+    Label:
+        text = 'Channels'
+    ObjectCombo:
+        items << list(task.get_member('defined_channels').items)
+        selected := task.defined_channel
