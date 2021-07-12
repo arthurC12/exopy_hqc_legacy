@@ -116,6 +116,31 @@ class AdwinSetVoltageInterface(TaskInterface):
         return super().check(*args, **kwargs)
 
 
+class AdwinGetVoltageInterface(TaskInterface):
+    """Set a DC voltage to the specified value for the specified channel of Adwin
+
+    """
+    #: Id of the channel whose central frequency should be set.
+    in_channel = Int(1).tag(pref=True)
+    database_entries = set_default({'voltage': 0.0})
+
+    def perform(self, value=None):
+        """Set the Voltage of the specified channel.
+
+        """
+        task = self.task
+        task.driver.owner = task.name
+        if value is None:
+            value = task.format_and_eval_string(task.value)
+        x = task.driver.get_voltage(self.in_channel)
+        task.write_in_database('voltage', float(x))
+
+    def check(self, *args, **kwargs):
+        """
+
+        """
+        return super().check(*args, **kwargs)
+
 class LoadProcessTask(InstrumentTask):
     """Load Process from the file
     """
