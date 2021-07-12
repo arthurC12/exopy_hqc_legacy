@@ -11,8 +11,8 @@
 """
 import time
 import numbers
-
-from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple)
+import numpy as np
+from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple, List)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
@@ -494,7 +494,7 @@ class GetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     """Get DC voltage from the device
     """
     wait_time = Float().tag(pref=True)
-    database_entries = set_default({'voltage': 0.00})
+    database_entries = set_default({'voltage': np.array([0.00])})
 
     def i_perform(self, value=None):
         if self.driver.owner != self.name:
@@ -595,3 +595,32 @@ class MultiChannelGetCurrentInterface(TaskInterface):
         res = check_channels_presence(task, [self.channel], *args, **kwargs)
         tb.update(res[1])
         return test and res[0], tb
+
+
+class SetDummyTask(InterfaceableTaskMixin, InstrumentTask):
+    """Get the current
+    """
+    wait_time = Float().tag(pref=True)
+    database_entries = set_default({'current': 0.00})
+    defined_channel = Int(1).tag(pref=True)
+    defined_channels = List().tag(pref=True)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            self.defined_channels.items = self.driver.defined_channels
+        except AttributeError:
+            self.defined_channels.items = [1,2,3,4]
+
+    def i_perform(self, value=None):
+        if self.driver.owner != self.name:
+            self.driver.owner = self.name
+        time.sleep(self.wait_time)
+        value = self.driver.current
+        self.write_in_database('current', float(value))
+
+    def check(self, *args, **kwargs):
+        """Add the unit into the database.
+        """
+
+        test, traceback = super(SetDummyTask, self).check(*args, **kwargs)
+        return test, traceback
