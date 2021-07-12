@@ -43,7 +43,7 @@ class Adwin(DllInstrument):
         #        ind += 1
         #        print('Loading process #{}: '.format(ind))
         #        self._load_process(file)
-        files = ['setvoltage.tb1', 'getvoltage.tb1']
+        files = ['setvoltage.TB1', 'getvoltage.TB2']
         for ind, file in enumerate(files):
             print('Loading {} as process #{}'.format(file, ind+1))
             try:
