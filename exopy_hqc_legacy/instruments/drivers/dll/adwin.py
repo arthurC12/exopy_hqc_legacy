@@ -35,6 +35,7 @@ class Adwin(DllInstrument):
         self.address = connection_info['instr_id'] or 0x1
         self.lib_dir = connection_info['lib_dir']
         #files = os.listdir(self.lib_dir)
+        self._adwin = ADwin.ADwin(self.address, 1)
         self._boot(18)
         #ind = 0
         #for file in files:
@@ -57,9 +58,7 @@ class Adwin(DllInstrument):
 
         """
         print('Open connection:', para)
-        pass
-        #self._adwin = ADwin.ADwin(self.address, 1)
-        # super().open_connection(**para)
+        super().open_connection(**para)
         # self.write_termination = ''
         # self.read_termination = ''
         # self._boot(18)
