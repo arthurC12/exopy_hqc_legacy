@@ -243,14 +243,11 @@ class Adwin(DllInstrument):
     # Standard functions from the driver
     def _boot(self, resolution):
         print('Adwin booted with the resolution of {}'.format(resolution))
-        """
         if resolution == 16:
             boot_script = r'C:\ADwin\ADwin9.btl'
         elif resolution == 18:
             boot_script = r'C:\ADwin\ADwin11.btl'
         self._adwin.Boot(boot_script)
-        """
-        pass
         return None
 
     def _get_version(self):
