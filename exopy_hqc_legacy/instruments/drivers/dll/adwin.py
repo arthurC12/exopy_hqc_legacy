@@ -47,14 +47,14 @@ class Adwin(DllInstrument):
         print('Open connection:', para)
         self.para = para
         self._clear_all_processes()
-        files = ['setandgetvoltage.TB1']
-        #files = ['setvoltage.TB1', 'getvoltage.TB2']
-        for ind, file in enumerate(files):
-            print('Loading {} as process #{}'.format(file, ind+1))
-            try:
-                self._load_process(os.path.join(self.lib_dir, file))
-            except ADwin.ADwinError as err:
-                print(err)
+        #files = ['setandgetvoltage.TB1']
+        #files = ['setvoltage.TB1', 'getvoltage.TB1','setandgetvoltage.TB1']
+        #for ind, file in enumerate(files):
+        #    print('Loading {} as process #{}'.format(file, ind+1))
+        #    try:
+        #        self._load_process(os.path.join(self.lib_dir, file))
+        #    except ADwin.ADwinError as err:
+        #        print(err)
         # super().open_connection(**para)
         # self.write_termination = ''
         # self.read_termination = ''
@@ -70,18 +70,17 @@ class Adwin(DllInstrument):
 
     def set_voltage(self, voltage, out_channel=1, in_channel=1, process_delay=0.00):
         output_range = 10.0
-        input_range = 10.0
         resolution_output = 16
-        resolution_input = 18
         out_bin, voltage = Adwin.convert_V_to_bin(voltage, output_range, resolution_output)
         refresh_rate = 10 # Hz
+        self._clear_all_processes()
+        self._load_process(os.path.join(self.lib_dir, "setvoltage.TB1"))
         print('Out channel:', out_channel, type(out_channel))
         print('Out bin:', out_bin, type(out_bin))
         self._set_Par(1, out_bin)
         self._set_Par(2, out_channel)
-        self._set_Par(3, in_channel)
         self._set_Par(5, 1)  # process is still running
-        self._start_process(int(1))  # setvoltage.tb1
+        self._start_process(1)  # setvoltage.tb1
         check = True
         while check:
             p5 = self._get_Par(5)
@@ -90,18 +89,22 @@ class Adwin(DllInstrument):
             else:
                 self._stop_process(1)
                 check = False
-        in_bin = self._get_Par(4) >> 6
-        measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
-        return measured
+        #in_bin = self._get_Par(4) >> 6
+        #measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
+        #return measured
 
     def get_voltage(self, in_channel=1):
         print('Attempting to measure voltage...')
+        self._clear_all_processes()
+        self._load_process(os.path.join(self.lib_dir, "getvoltage.TB1"))
         input_range = 10.0
         resolution_input = 18
-        refresh_rate = 100 # Hz
+        refresh_rate = 4 # Hz
+        for i in range(1, 5):
+            self._process_status(i, 'string')
         self._set_Par(3, int(in_channel))
-        self._set_Par(5, int(1))  # process is still running
-        self._start_process(int(1))  # getvoltage.TB2
+        self._set_Par(6, 1)  # process is still running
+        self._start_process(1)  # getvoltage.TB2
         check = True
         while check:
             p6 = self._get_Par(6)
@@ -117,8 +120,34 @@ class Adwin(DllInstrument):
         measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
         return measured
 
+    def _set_voltage(self, voltage, out_channel=1, in_channel=1, process_delay=0.00):
+        output_range = 10.0
+        input_range = 10.0
+        resolution_output = 16
+        resolution_input = 18
+        out_bin, voltage = Adwin.convert_V_to_bin(voltage, output_range, resolution_output)
+        refresh_rate = 10 # Hz
+        print('Out channel:', out_channel, type(out_channel))
+        print('Out bin:', out_bin, type(out_bin))
+        self._set_Par(1, out_bin)
+        self._set_Par(2, out_channel)
+        self._set_Par(3, in_channel)
+        self._set_Par(5, 1)  # process is still running
+        self._start_process(3)  # setvoltage.tb1
+        check = True
+        while check:
+            p5 = self._get_Par(5)
+            if p5 == 1:
+                time.sleep(1 / refresh_rate)
+            else:
+                self._stop_process(3)
+                check = False
+        in_bin = self._get_Par(4) >> 6
+        measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
+        return measured
+    
     def record_IV(self, Voltage, process_delay, loops_waiting, points_av, log, lin_gain, log_conversion, process_file):
-        #def record_IV(self, *args, **kwargs):
+        #        def record_IV(self, *args, **kwargs):
         # record I(V) using ADwin
         """
         resolution_input = 18
