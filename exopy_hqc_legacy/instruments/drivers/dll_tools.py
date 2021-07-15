@@ -30,7 +30,12 @@ class DllInstrument(BaseInstrument):
     """
 
     library = ''
-
+    def open_connection(self, *args, **kwargs):
+        pass
+    
+    def close_connection(self):
+        pass
+    
 
 class DllLibrary(object):
     """ Singleton class used to call a dll.

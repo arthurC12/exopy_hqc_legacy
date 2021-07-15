@@ -124,14 +124,14 @@ class AdwinGetVoltageInterface(TaskInterface):
     in_channel = Int(1).tag(pref=True)
     database_entries = set_default({'voltage': 0.0})
 
-    def perform(self, value=None):
+    def perform(self):
         """Set the Voltage of the specified channel.
 
         """
         task = self.task
         task.driver.owner = task.name
-        if value is None:
-            value = task.format_and_eval_string(task.value)
+        # if value is None:
+        #    value = task.format_and_eval_string(task.value)
         x = task.driver.get_voltage(self.in_channel)
         task.write_in_database('voltage', float(x))
 
