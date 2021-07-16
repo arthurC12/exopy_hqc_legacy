@@ -114,7 +114,7 @@ enamldef AdwinVoltageView(InstrView): view:
     Label: out_channel:
         text = 'Output BNC'
     ObjectCombo: out_channels:
-        items = [1,2]
+        items = [1,2,3,4,5,6,7,8]
         selected := interface.out_channel
 
     Label: in_channel:
@@ -146,7 +146,7 @@ enamldef AdwinOutChannelValue(ObjectCombo):
     attr interface
     attr root
     hug_width = 'medium'
-    items = [1,2]
+    items = [1,2,3,4,5,6,7,8]
     selected := interface.out_channel
 
 enamldef AdwinInChannelValue(ObjectCombo):
