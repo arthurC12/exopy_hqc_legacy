@@ -239,7 +239,7 @@ enamldef SetVoltageView(InstrView): view:
     Conditional:
         condition << not in_loop
         Label:
-            text = 'Voltage (V)'
+            text = 'Voltage'
         QtLineCompleter:
             hug_width = 'ignore'
             text := task.value
@@ -247,7 +247,7 @@ enamldef SetVoltageView(InstrView): view:
             tool_tip = EVALUATER_TOOLTIP
 
     Label:
-        text = 'Unit (not implemented)'
+        text = 'Unit'
     ObjectCombo:
         items << list(task.get_member('unit').items)
         selected := task.unit

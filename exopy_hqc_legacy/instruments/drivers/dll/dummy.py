@@ -43,7 +43,6 @@ class Dummy(DllInstrument):
         """
         pass
 
-
     def close_connection(self):
         pass
 
@@ -53,12 +52,12 @@ class Dummy(DllInstrument):
         return self._voltage
 
     def read_voltage_dc(self):
-        try:
-            return next(self._voltages)
-        except StopIteration:
-            return self.voltage
+        return self._voltage
 
     @voltage.setter
     def voltage(self, value):
         self._voltage = value
         print('Set new voltage: {}V'.format(self._voltage))
+
+    def set_voltage(self, value, *args):
+        self._voltage = value

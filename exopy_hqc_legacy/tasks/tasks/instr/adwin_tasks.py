@@ -16,6 +16,10 @@ from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple, Bool)
 
 from exopy.tasks.api import (InstrumentTask, TaskInterface)
 
+CONVERSION_FACTORS = {'V': {'mV': 1e3, 'uV': 1e6, 'V': 1},
+                      'mV': {'mV': 1, 'uV': 1e3, 'V': 1e-3},
+                      'uV': {'mV': 1e-3, 'uV': 1, 'V': 1e-6}}
+
 
 class _RecordIVTask(InstrumentTask):
     """Record the IV using Adwin
@@ -94,7 +98,7 @@ class AdwinSetVoltageInterface(TaskInterface):
     """
     #: Id of the channel whose central frequency should be set.
     out_channel = Int(1).tag(pref=True)
-    database_entries = set_default({'voltage': 0.0, 'in_voltage': 0.0})
+    database_entries = set_default({'voltage': 0.0})
 
     def perform(self, value=None):
         """Set the Voltage of the specified channel.
@@ -103,7 +107,7 @@ class AdwinSetVoltageInterface(TaskInterface):
         task = self.task
         task.driver.owner = task.name
         if value is None:
-            value = task.format_and_eval_string(task.value)
+            value = self.convert(task.format_and_eval_string(task.value),'V')
         task.driver.set_voltage(value, self.out_channel)
         task.write_in_database('voltage', value)
 
@@ -112,6 +116,13 @@ class AdwinSetVoltageInterface(TaskInterface):
 
         """
         return super().check(*args, **kwargs)
+
+    def convert(self, voltage, unit):
+        """ Convert a voltage to the given unit.
+        """
+        print('Converting {} {} to {}'.format(voltage, self.task.unit, unit))
+        print('Convertion factor: ', CONVERSION_FACTORS[self.task.unit][unit])
+        return voltage*CONVERSION_FACTORS[self.task.unit][unit]
 
 
 class AdwinGetVoltageInterface(TaskInterface):

@@ -17,6 +17,9 @@ from atom.api import (Float, Value, Str, Int, set_default, Enum, Tuple, List)
 from exopy.tasks.api import (InstrumentTask, TaskInterface,
                             InterfaceableTaskMixin, validators)
 
+CONVERSION_FACTORS = {'V': {'mV': 1e3, 'uV': 1e6, 'V': 1},
+                      'mV': {'mV': 1, 'uV': 1e3, 'V': 1e-3},
+                      'uV': {'mV': 1e-3, 'uV': 1, 'V': 1e-6}}
 
 def check_channels_presence(task, channels, *args, **kwargs):
     """ Check that all the channels are correctly defined on the PNA.
@@ -376,13 +379,13 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     #: Target value for the source (dynamically evaluated)
     value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
     wait_time = Float().tag(pref=True)
-    unit = Enum('V', 'mV', 'μV').tag(pref=True)
+    unit = Enum('V', 'mV', 'uV').tag(pref=True)
     database_entries = set_default({'voltage': 0.01})
 
     def i_perform(self, value=None):
         if value is None:
-            value = self.value
-            value = self.format_and_eval_string(value)
+            value = self.format_and_eval_string(self.value)
+        value = self.convert(value, 'V')
         print('Setting voltage to {}'.format(value))
         time.sleep(self.wait_time)
         self.driver.voltage = value
@@ -394,6 +397,13 @@ class SetVoltageTask(InterfaceableTaskMixin, InstrumentTask):
         """
         test, traceback = super(SetVoltageTask, self).check(*args, **kwargs)
         return test, traceback
+
+    def convert(self, voltage, unit):
+        """ Convert a voltage to the given unit.
+        """
+        print('Converting {} {} to {}'.format(voltage, self.unit, unit))
+        print('Convertion factor: ', CONVERSION_FACTORS[self.unit][unit])
+        return voltage*CONVERSION_FACTORS[self.unit][unit]
 
 
 class MultiChannelSetVoltageInterface(TaskInterface):
