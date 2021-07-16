@@ -193,16 +193,6 @@ enamldef HqcLegacyManifest(PluginManifest):
                                            {'resource_class': 'INSTR'}
                                        }
                 Drivers:
-                    manufacturer = 'Adwin'
-                    Driver:
-                        driver = 'adwin:AdwinVisa'
-                        model = 'AdwinGoldII'
-                        kind = 'Other'
-                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
-                                       'VisaRS232':
-                                           {'resource_class': 'INSTR'}
-                                       }
-                Drivers:
                     manufacturer = 'Oxford'
                     Driver:
                         driver = 'oxford_ips:IPS12010'
@@ -730,8 +720,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                 Task:
                     task = 'adwin_tasks:LoadProcessTask'
                     view = 'views.adwin_views:LoadProcessView'
-                    instruments = ['exopy_hqc_legacy.Legacy.AdwinVisa',
-                                   'exopy_hqc_legacy.Legacy.Adwin']
+                    instruments = ['exopy_hqc_legacy.Legacy.Adwin']
                 Task:
                     task = 'adwin_tasks:RecordIVTask'
                     view = 'views.adwin_views:RecordIVView'

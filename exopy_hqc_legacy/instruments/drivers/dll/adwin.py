@@ -98,7 +98,7 @@ class Adwin(DllInstrument):
                 self._stop_process(1)
                 check = False
 
-    def __get_voltage(self, in_channel=1):
+    def get_voltage(self, in_channel=1):
         print('Attempting to measure voltage...')
         input_range = 10.0
         resolution_input = 18

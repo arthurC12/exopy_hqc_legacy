@@ -12,16 +12,20 @@
 ' Info_Last_Save                 = DESKTOP-EBA7GLF  DESKTOP-EBA7GLF\sergi
 '<Header End>
 'Inputs:
-'PAR_1 = output voltage
-'PAR_2 = ouput_channel
+'PAR_3 = input channel
 'Outputs:
+'PAR_4 = Measured value, 24 bit
 'PAR_5 - flag End_of_operation
 
 #Include ADwinGoldII.inc
 #Define voltage Par_1 'set voltage
 #Define out_channel Par_2
-Event:
-  if (Par_5 > 0) Then 
-    DAC(out_channel, voltage) 'Output voltage
-    Par_5 = 0
-  EndIf
+#Define in_channel Par_3
+DIM measured as long
+INIT:
+  measured = 0
+EVENT:
+  DAC(out_channel, voltage) 'Output voltage
+  measured = ADC24(in_channel) 'Output voltage
+  Par_4 = measured
+  Par_5 = 0
