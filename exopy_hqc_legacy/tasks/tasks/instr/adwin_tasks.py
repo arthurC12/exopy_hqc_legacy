@@ -94,7 +94,6 @@ class AdwinSetVoltageInterface(TaskInterface):
     """
     #: Id of the channel whose central frequency should be set.
     out_channel = Int(1).tag(pref=True)
-    in_channel = Int(1).tag(pref=True)
     database_entries = set_default({'voltage': 0.0, 'in_voltage': 0.0})
 
     def perform(self, value=None):
@@ -105,9 +104,8 @@ class AdwinSetVoltageInterface(TaskInterface):
         task.driver.owner = task.name
         if value is None:
             value = task.format_and_eval_string(task.value)
-        x = task.driver.set_voltage(value, self.out_channel, self.in_channel, task.wait_time)
+        task.driver.set_voltage(value, self.out_channel)
         task.write_in_database('voltage', value)
-        task.write_in_database('in_voltage', x)
 
     def check(self, *args, **kwargs):
         """
@@ -117,7 +115,7 @@ class AdwinSetVoltageInterface(TaskInterface):
 
 
 class AdwinGetVoltageInterface(TaskInterface):
-    """Set a DC voltage to the specified value for the specified channel of Adwin
+    """Read a DC voltage from the specified channel of Adwin
 
     """
     #: Id of the channel whose central frequency should be set.

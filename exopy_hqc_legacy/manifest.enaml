@@ -704,9 +704,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     Interface:
                         interface = 'adwin_tasks:AdwinSetVoltageInterface'
                         views = ['views.adwin_views:AdwinOutChannelLabel',
-                                 'views.adwin_views:AdwinOutChannelValue',
-                                 'views.adwin_views:AdwinInChannelLabel',
-                                 'views.adwin_views:AdwinInChannelValue']
+                                 'views.adwin_views:AdwinOutChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.Adwin']
                 Task:
                     task = 'dc_tasks:GetCurrentTask'
