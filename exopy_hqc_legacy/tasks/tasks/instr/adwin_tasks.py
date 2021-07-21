@@ -120,8 +120,8 @@ class AdwinSetVoltageInterface(TaskInterface):
     def convert(self, voltage, unit):
         """ Convert a voltage to the given unit.
         """
-        print('Converting {} {} to {}'.format(voltage, self.task.unit, unit))
-        print('Convertion factor: ', CONVERSION_FACTORS[self.task.unit][unit])
+        # print('Converting {} {} to {}'.format(voltage, self.task.unit, unit))
+        # print('Convertion factor: ', CONVERSION_FACTORS[self.task.unit][unit])
         return voltage*CONVERSION_FACTORS[self.task.unit][unit]
 
 

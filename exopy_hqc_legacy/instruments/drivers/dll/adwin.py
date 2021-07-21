@@ -9,8 +9,7 @@
 """Drivers for ADwin system using DLL library.
 
 """
-from ..driver_tools import (InstrIOError, secure_communication, instrument_property)
-
+from ..driver_tools import (instrument_property)
 from ..dll_tools import DllInstrument
 import numpy as np
 import os
@@ -35,6 +34,7 @@ class AdwinChannel:
     def voltage(self, value):
         self._adw.set_voltage(self.channel, value)
 
+
 class Adwin(DllInstrument):
     """
     Driver for an Adwin Data Acquisition device, using its DLL driver.
@@ -48,10 +48,9 @@ class Adwin(DllInstrument):
     def __init__(self, connection_info, caching_allowed=True, caching_permissions={}, auto_open=True):
         super().__init__(connection_info, caching_allowed,
                                          caching_permissions, auto_open)
-        print('Connection_info:', connection_info)
+        # print('Connection_info:', connection_info)
         self.address = int(connection_info['instr_id']) or 0x1
         self.lib_dir = connection_info['lib_dir']
-        #files = os.listdir(self.lib_dir)
         self._adwin = ADwin.ADwin(self.address, 1)
         self._boot(18)
         if auto_open:
@@ -61,9 +60,9 @@ class Adwin(DllInstrument):
         """Open the connection to the instr using the `connection_str`.
 
         """
-        print('Open connection:', para)
+        # print('Open connection:', para)
         self._clear_all_processes()
-        process_file = 'adwin.TB1'
+        process_file = 'adwin.TB1' # process file
         try:
             self._load_process(os.path.join(self.lib_dir, process_file))
         except ADwin.ADwinError as err:
@@ -81,10 +80,10 @@ class Adwin(DllInstrument):
         output_range = 10.0
         resolution_output = 16
         out_bin, voltage = Adwin.convert_V_to_bin(voltage, output_range, resolution_output)
-        refresh_rate = 10  # Hz
-        print('Out channel:', out_channel, type(out_channel))
-        print('Out bin:', out_bin, type(out_bin))
-        self._set_Par(11, 1) # Set flag to set the voltage
+        refresh_rate = 100  # Hz
+        # print('Out channel:', out_channel, type(out_channel))
+        # print('Out bin:', out_bin, type(out_bin))
+        self._set_Par(11, 1)  # Set flag to set the voltage
         self._set_Par(12, out_channel)
         self._set_Par(13, out_bin)
         self._set_Par(14, 1)  # process is still running
@@ -99,7 +98,7 @@ class Adwin(DllInstrument):
                 check = False
 
     def get_voltage(self, in_channel=1):
-        print('Attempting to measure voltage...')
+        # print('Attempting to measure voltage...')
         input_range = 10.0
         resolution_input = 18
         refresh_rate = 100  # Hz
@@ -116,7 +115,7 @@ class Adwin(DllInstrument):
                 self._stop_process(1)
                 check = False
         in_bin = self._get_Par(13) >> 6 # Read long value in 24 bit format
-        print('Binary: {}'.format(in_bin))
+        # print('Binary: {}'.format(in_bin))
         measured = Adwin.convert_bin_to_V(in_bin, input_range, resolution_input)
         return measured
 
@@ -248,7 +247,8 @@ class Adwin(DllInstrument):
     @staticmethod
     def convert_V_to_bin(V, V_range, resolution):
         # converts ADC/DAC voltage to bin number, given the voltage range and the resolution (in bits)
-        voltage = np.linspace(-V_range, V_range, 2**resolution)
+        # for 16 bits: 0 -> -10V, 2**16 = 65536 -> +10V
+        voltage = np.linspace(-V_range, V_range, 2**resolution + 1)  # +1 - see manual, p.13
         try:
             N_bin = [np.argmin(np.abs(voltage - v)) for v in V]
             # l = len(V)
@@ -259,13 +259,12 @@ class Adwin(DllInstrument):
         except TypeError:
             diff = np.abs(voltage - V)
             N_bin = diff.argmin()
-        # return N_bin, Adwin.convert_bin_to_V(N_bin, V_range, resolution)
         return N_bin.tolist(), voltage[N_bin].tolist()
 
     @staticmethod
     def convert_bin_to_V(N_bin, V_range, resolution):
         # converts ADC/DAC bins to voltage, given the voltage range and the resolution (in bits)
-        voltage = np.linspace(-V_range, V_range, 2**resolution)
+        voltage = np.linspace(-V_range, V_range, 2**resolution + 1) # +1 - see manual, p.13
         try:
             N_bin = int(N_bin)
             data = voltage[N_bin]
@@ -307,7 +306,7 @@ class Adwin(DllInstrument):
         return None
 
     def _start_process(self, process_number):
-        print('Starting process {}'.format(process_number))
+        # print('Starting process {}'.format(process_number))
         self._adwin.Start_Process(process_number)
         return None
 
@@ -365,12 +364,11 @@ class Adwin(DllInstrument):
             print(self._get_FPar(i))
 
     def _set_Par(self, parameter, value):
-        print('Setting parameter #{} to {} (type {})'.format(parameter, value, type(value)))
+        # print('Setting parameter #{} to {} (type {})'.format(parameter, value, type(value)))
         self._adwin.Set_Par(parameter, value)
 
     def _get_Par(self, parameter):
         value = self._adwin.Get_Par(parameter)
-        # print 'Par %1.0f is %1.2f' % (par, value)
         return value
 
     def _get_all_Par(self):
