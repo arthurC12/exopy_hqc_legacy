@@ -40,7 +40,7 @@ class SetRFFrequencyTask(InterfaceableTaskMixin, InstrumentTask):
     # Whether to start the source if its output is off.
     auto_start = Bool(False).tag(pref=True)
 
-    database_entries = set_default({'frequency': 1.0, 'unit': 'GHz'})
+    database_entries = set_default({'frequency': 1.0, 'unit': 'Hz'})
 
     def check(self, *args, **kwargs):
         """Add the unit into the database.

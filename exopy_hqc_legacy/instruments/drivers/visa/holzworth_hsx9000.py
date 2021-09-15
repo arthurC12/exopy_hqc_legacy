@@ -98,6 +98,7 @@ class Holzworth9000Channel(BaseInstrument):
             if not value.endswith('Hz'):
                 raise InstrIOError(cleandoc('''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
         self._hsx9000.write(':CH{}:FREQ:{}'.format(self._channel, value))
+        # raise InstrIOError(cleandoc('''{}'''.format(value)))
         result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
         if not result:
             raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
@@ -316,7 +317,7 @@ class Holzworth9000(VisaInstrument):
         self.num_channels = 0
         self.defined_channels = None
         self.channels = {}
-        self.frequency_unit = "GHz"
+        self.frequency_unit = "Hz"
         self.phase_unit = "Deg"
 
     def open_connection(self, **para):
@@ -343,20 +344,22 @@ class Holzworth9000(VisaInstrument):
             HSX9003 -> 3 channels
             HSX9004 -> 4 channels
             '''
+            num_channels = 4
+            self.defined_channels = list(range(1, num_channels + 1))
             result = self.query('*IDN?')
-            if result:
-                hsx = result.find('HSX')
-                if hsx != -1:
-                    try:
-                        model = int(result[hsx + 3:hsx + 7])
-                    except ValueError:
-                        raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
-                    num_channels = model % 10
-                    self.defined_channels = list(range(1, num_channels + 1))
-                else:
-                    raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
-            else:
-                raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
+            # if result:
+            #     hsx = result.find('HSX')
+            #     if hsx != -1:
+            #         try:
+            #             model = int(result[hsx + 3:hsx + 7])
+            #         except ValueError:
+            #             raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+            #         num_channels = model % 10
+            #         self.defined_channels = list(range(1, num_channels + 1))
+            #     else:
+            #         raise InstrIOError(cleandoc('''Holzworth HSX did not result the model name'''))
+            # else:
+            #     raise InstrIOError(cleandoc('''Holzworth HSX did not respond'''))
         if num not in self.defined_channels:
             return None
         if num in self.channels:
