@@ -99,9 +99,9 @@ class Holzworth9000Channel(BaseInstrument):
                 raise InstrIOError(cleandoc('''Incorrect frequency value is given. Allowed: number (in MHz) of string with *Hz suffix'''))
         self._hsx9000.write(':CH{}:FREQ:{}'.format(self._channel, value))
         # raise InstrIOError(cleandoc('''{}'''.format(value)))
-        result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
-        if not result:
-            raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
+        # result = self._hsx9000.query(':CH{}:FREQ?'.format(self._channel))
+        # if not result:
+        #     raise InstrIOError(cleandoc('''Holzworth HSX did not set correctly the output frequency'''))
 
     @instrument_property
     @secure_communication()

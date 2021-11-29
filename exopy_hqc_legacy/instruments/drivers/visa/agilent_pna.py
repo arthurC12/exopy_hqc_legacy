@@ -903,19 +903,19 @@ class AgilentPNA(VisaInstrument):
     def data_format(self, value):
         """
         """
-        if value == 'REAL,32':
-            value = 'REAL,+32'
-        elif value == 'REAL,64':
-            value = 'REAL,+64'
-        elif value == 'ASCii,0':
-            value = 'ASC,+0'
+        if value == 'REAL,+32':
+            value = 'REAL,32'
+        elif value == 'REAL,+64':
+            value = 'REAL,64'
+        elif value == 'ASCii,+0':
+            value = 'ASC,0'
 
         self.write('FORMAT:DATA {}'.format(value))
         result = self.query('FORMAT:DATA?')
 
         if result.lower() != value.lower()[:len(result)]:
             raise InstrIOError(cleandoc('''PNA did not set correctly the
-                data format'''))
+                data format {},{}'''.format(result, value)))
 
     @instrument_property
     @secure_communication()
