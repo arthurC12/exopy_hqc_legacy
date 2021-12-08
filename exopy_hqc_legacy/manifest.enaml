@@ -458,11 +458,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.Adwin3055',
                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel']
                     metadata = {'loopable': True}
-                    Interface:
-                        interface = 'meas_dc_tasks:MultiChannelMeasDCVoltageInterface'
-                        views = ['views.mc_task_views:MultiChannelLabel',
-                                 'views.mc_task_views:MultiChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+
                 Task:
                     task = 'meas_dc_tasks:MeasDCCurrentTask'
                     view = 'views.meas_dc_views:MeasDCCurrView'
@@ -617,7 +613,9 @@ enamldef HqcLegacyManifest(PluginManifest):
                     instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
                                    'exopy_hqc_legacy.Legacy.Yokogawa7651',
                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel',
-                                   'exopy_hqc_legacy.Legacy.Dummy']
+                                   'exopy_hqc_legacy.Legacy.Dummy'
+                                   
+                                   ]
                     metadata = {'loopable': True}
                     Interface:
                         interface = ('dc_tasks:'
@@ -630,8 +628,16 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'MultiChannelVoltageSourceILabel',
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceIChannel']
-                        instruments = ['exopy_hqc_legacy.Legacy.TinyBilt',
-                                       'exopy_hqc_legacy.Legacy.QDac']
+                        instruments = ['exopy_hqc_legacy.Legacy.TinyBilt'
+                                       ]
+                    Interface:
+                        interface = ('dc_tasks:'
+                                     'MultiChannelVoltageSourceInterfaceNoModule')
+                        views = ['views.dc_views:'
+                                 'MultiChannelVoltageSourceILabelQdac',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIChannelQdac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
 
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'

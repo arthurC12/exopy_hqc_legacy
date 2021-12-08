@@ -17,34 +17,34 @@ from exopy.tasks.api import InstrumentTask, InterfaceableTaskMixin, TaskInterfac
 
 
 
-def check_channels_presence(task, channels, *args, **kwargs):
-    """ Check that all the channels are correctly defined on the PNA.
+# def check_channels_presence(task, channels, *args, **kwargs):
+#     """ Check that all the channels are correctly defined on the PNA.
 
-    """
-    if kwargs.get('test_instr'):
-        traceback = {}
-        err_path = task.get_error_path()
-        with task.test_driver() as instr:
-            if instr is None:
-                return False, traceback
-            channels_present = True
-            for channel in channels:
-                if channel not in instr.defined_channels:
-                    key = err_path + '_' + str(channel)
-                    msg = ("Channel {} is not defined in the {}."
-                           " Please define it yourself and try again.")
-                    traceback[key] = msg.format(channel,
-                                                task.selected_instrument[0])
+#     """
+#     if kwargs.get('test_instr'):
+#         traceback = {}
+#         err_path = task.get_error_path()
+#         with task.test_driver() as instr:
+#             if instr is None:
+#                 return False, traceback
+#             channels_present = True
+#             for channel in channels:
+#                 if channel not in instr.defined_channels:
+#                     key = err_path + '_' + str(channel)
+#                     msg = ("Channel {} is not defined in the {}."
+#                            " Please define it yourself and try again.")
+#                     traceback[key] = msg.format(channel,
+#                                                 task.selected_instrument[0])
 
-                    channels_present = False
+#                     channels_present = False
 
-            return channels_present, traceback
+#             return channels_present, traceback
 
-    else:
-        return True, {}
+#     else:
+#         return True, {}
 
 
-class MeasDCVoltageTask(InterfaceableTaskMixin,InstrumentTask):
+class MeasDCVoltageTask(InstrumentTask):
     """Measure a dc voltage.
 
     Wait for any parallel operation before execution and then wait the
@@ -68,43 +68,43 @@ class MeasDCVoltageTask(InterfaceableTaskMixin,InstrumentTask):
         self.write_in_database('voltage', value)
 
 
-class MultiChannelMeasDCVoltageInterface(TaskInterface):
-    """Measure a dc voltage from a multichannel device
+# class MultiChannelMeasDCVoltageInterface(TaskInterface):
+#     """Measure a dc voltage from a multichannel device
 
-    Wait for any parallel operation before execution and then wait the
-    specified time before performing the measure.
+#     Wait for any parallel operation before execution and then wait the
+#     specified time before performing the measure.
 
-    """
-    # Channel
-    channel = Int(1).tag(pref=True)
-    #: Driver for the channel.
-    channel_driver = Value()
-    # wait_time = Float().tag(pref=True)
-    # database_entries = set_default({'voltage': 1.0})
-    defined_channels = List()
-    def perform(self):
-        """Set the voltage of the specified channel.
+#     """
+#     # Channel
+#     channel = Int(1).tag(pref=True)
+#     #: Driver for the channel.
+#     channel_driver = Value()
+#     # wait_time = Float().tag(pref=True)
+#     # database_entries = set_default({'voltage': 1.0})
+#     defined_channels = List()
+#     def perform(self):
+#         """Set the voltage of the specified channel.
 
-        """
-        task = self.task
-        if not self.channel_driver:
-            self.channel_driver = task.driver.get_channel(self.channel)
-        task.driver.owner = task.name
-        self.channel_driver.owner = task.name
-        sleep(task.wait_time)
-        value = self.channel_driver.voltage#read_voltage_dc()
-        task.write_in_database('voltage', value)
+#         """
+#         task = self.task
+#         if not self.channel_driver:
+#             self.channel_driver = task.driver.get_channel(self.channel)
+#         task.driver.owner = task.name
+#         self.channel_driver.owner = task.name
+#         sleep(task.wait_time)
+#         value = self.channel_driver.voltage#read_voltage_dc()
+#         task.write_in_database('voltage', value)
 
-    def check(self, *args, **kwargs):
-        """Make sure the specified channel does exist on the instrument.
+#     def check(self, *args, **kwargs):
+#         """Make sure the specified channel does exist on the instrument.
 
-        """
-        self.defined_channels = self.task.driver.defined_channels
-        test, tb = super(MultiChannelMeasDCVoltageInterface,self).check(*args, **kwargs)
-        task = self.task
-        res = check_channels_presence(task, [self.channel], *args, **kwargs)
-        tb.update(res[1])
-        return test and res[0], tb
+#         """
+#         self.defined_channels = self.task.driver.defined_channels
+#         test, tb = super(MultiChannelMeasDCVoltageInterface,self).check(*args, **kwargs)
+#         task = self.task
+#         res = check_channels_presence(task, [self.channel], *args, **kwargs)
+#         tb.update(res[1])
+#         return test and res[0], tb
 
 
 class MeasDCCurrentTask(InstrumentTask):

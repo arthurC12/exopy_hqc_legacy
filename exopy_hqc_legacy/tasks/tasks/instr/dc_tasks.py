@@ -83,10 +83,10 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     target_value = Str().tag(pref=True, feval=validators.SkipLoop(types=numbers.Real))
 
     #: Largest allowed step when changing the output of the instr.
-    back_step = Float().tag(pref=True)
+    back_step = Float(0.01).tag(pref=True)
 
     #: Largest allowed voltage
-    safe_max = Float(0.0).tag(pref=True)
+    safe_max = Float(2.0).tag(pref=True)
 
     #: Largest allowed delta compared to current value
     safe_delta = Float(0.0).tag(pref=True)
@@ -94,7 +94,7 @@ class SetDCVoltageTask(InterfaceableTaskMixin, InstrumentTask):
     #: Time to wait between changes of the output of the instr.
     delay = Float(0.01).tag(pref=True)
 
-    parallel = set_default({'activated': True, 'pool': 'instr'})
+    parallel = set_default({'activated': False, 'pool': 'instr'})
     database_entries = set_default({'voltage': 0.01})
 
     def i_perform(self, value=None):
@@ -188,7 +188,58 @@ class MultiChannelVoltageSourceInterface(TaskInterface):
     """
     #: Id of the channel to use.
     channel = Tuple(default=(1, 1)).tag(pref=True)
-    #channel = Int(1).tag(pref=True)
+    # channel = Int(1).tag(pref=True)
+    #: Reference to the driver for the channel.
+    channel_driver = Value()
+
+    def perform(self, value=None):
+        """Set the specified voltage.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+        if self.channel_driver.owner != task.name:
+            self.channel_driver.owner = task.name
+            if hasattr(self.channel_driver, 'function') and\
+                    self.channel_driver.function != 'VOLT':
+                msg = ('Instrument output assigned to task {} is not '
+                       'configured to output a voltage')
+                raise ValueError(msg.format(self.name))
+
+        setter = lambda value: setattr(self.channel_driver, 'voltage', value)
+        current_value = getattr(self.channel_driver, 'voltage')
+
+        task.smooth_set(value, setter, current_value)
+
+    def check(self, *args, **kwargs):
+        if kwargs.get('test_instr'):
+            task = self.task
+            traceback = {}
+            with task.test_driver() as d:
+                if d is None:
+                    return True, {}
+                if self.channel not in d.defined_channels:
+                    key = task.get_error_path() + '_interface'
+                    traceback[key] = 'Missing channel {}'.format(self.channel)
+
+            if traceback:
+                return False, traceback
+            else:
+                return True, traceback
+
+        else:
+            return True, {}
+
+
+
+class MultiChannelVoltageSourceInterfaceNoModule(TaskInterface):
+    """Interface for multiple outputs sources.
+
+    """
+    #: Id of the channel to use.
+    # channel = Tuple(default=(1, 1)).tag(pref=True)
+    channel = Int(1).tag(pref=True)
     #: Reference to the driver for the channel.
     channel_driver = Value()
 
@@ -251,7 +302,7 @@ class SetDCCurrentTask(InterfaceableTaskMixin, InstrumentTask):
     #: Time to wait between changes of the output of the instr.
     delay = Float(0.01).tag(pref=True)
 
-    parallel = set_default({'activated': True, 'pool': 'instr'})
+    parallel = set_default({'activated': False, 'pool': 'instr'})
     database_entries = set_default({'current': 0.01})
 
     def i_perform(self, value=None):
