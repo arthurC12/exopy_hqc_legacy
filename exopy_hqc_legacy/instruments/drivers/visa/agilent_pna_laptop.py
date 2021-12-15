@@ -27,13 +27,13 @@ FORMATTING_DICT = {'PHAS': lambda x: np.angle(x, deg=True),
                    'IMAG': np.imag}
 
 
-class AgilentPNAChannelError(Exception):
+class AgilentPNALaptopChannelError(Exception):
     """
     """
     pass
 
 
-class AgilentPNAChannel(BaseInstrument):
+class AgilentPNALaptopChannel(BaseInstrument):
     """
     """
     caching_permissions = {'frequency': True,
@@ -48,7 +48,7 @@ class AgilentPNAChannel(BaseInstrument):
 
     def __init__(self, pna, channel_num, caching_allowed=True,
                  caching_permissions={}):
-        super(AgilentPNAChannel, self).__init__(None, caching_allowed,
+        super(AgilentPNALaptopChannel, self).__init__(None, caching_allowed,
                                                 caching_permissions)
         self._pna = pna
         self._channel = channel_num
@@ -329,7 +329,7 @@ class AgilentPNAChannel(BaseInstrument):
             self._pna.write('SOURce{}:POWer:STOP {}'.format(self._channel,
                                                             stop))
         else:
-            raise AgilentPNAChannelError(cleandoc('''Unsupported type of sweep
+            raise AgilentPNALaptopChannelError(cleandoc('''Unsupported type of sweep
             : {} was specified for channel {}'''.format(sweep_type,
                                                      self._channel)))
 
@@ -709,7 +709,7 @@ class AgilentPNAChannel(BaseInstrument):
                                                             value))
 
 
-class AgilentPNA(VisaInstrument):
+class AgilentPNALaptop(VisaInstrument):
     """
     """
 
@@ -719,7 +719,7 @@ class AgilentPNA(VisaInstrument):
 
     def __init__(self, connection_info, caching_allowed=True,
                  caching_permissions={}, auto_open=True):
-        super(AgilentPNA, self).__init__(connection_info, caching_allowed,
+        super(AgilentPNALaptop, self).__init__(connection_info, caching_allowed,
                                          caching_permissions, auto_open)
         self.channels = {}
 
@@ -727,7 +727,7 @@ class AgilentPNA(VisaInstrument):
         """Open the connection to the instr using the `connection_str`.
 
         """
-        super(AgilentPNA, self).open_connection(**para)
+        super(AgilentPNALaptop, self).open_connection(**para)
         self.write_termination = '\n'
         self.read_termination = '\n'
         self.timeout = 10000 # 10s should be plenty
@@ -741,7 +741,7 @@ class AgilentPNA(VisaInstrument):
         if num in self.channels:
             return self.channels[num]
         else:
-            channel = AgilentPNAChannel(self, num)
+            channel = AgilentPNALaptopChannel(self, num)
             self.channels[num] = channel
             return channel
 
@@ -904,11 +904,11 @@ class AgilentPNA(VisaInstrument):
         """
         """
         if value == 'REAL,+32':
-            value = 'REAL,32'
+            value = 'REAL,+32'
         elif value == 'REAL,+64':
-            value = 'REAL,64'
+            value = 'REAL,+64'
         elif value == 'ASCii,+0':
-            value = 'ASC,0'
+            value = 'ASC,+0'
 
         self.write('FORMAT:DATA {}'.format(value))
         result = self.query('FORMAT:DATA?')

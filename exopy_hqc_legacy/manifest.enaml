@@ -130,6 +130,13 @@ enamldef HqcLegacyManifest(PluginManifest):
                                        'VisaTCPIP': {'resource_class': 'INSTR'}
                                        }
                     Driver:
+                        driver = 'agilent_pna_laptop:AgilentPNALaptop'
+                        model = 'PNA_laptop'
+                        connections = {'VisaGPIB': {'resource_class': 'INSTR'},
+                                       'VisaUSB': {'resource_class': 'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'INSTR'}
+                                       }
+                    Driver:
                         driver = 'agilent_pxa:AgilentPXA'
                         model = 'PXA'
                         connections = {'VisaGPIB': {'resource_class': 'INSTR'},
@@ -480,6 +487,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                         views = ['views.pna_task_views:IPNAChannelLabel',
                                  'views.pna_task_views:IPNAChannelValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
+                                       'exopy_hqc_legacy.Legacy.AgilentPNA_laptop',
                                        'exopy_hqc_legacy.Legacy.ZNB20',
                                        'exopy_hqc_legacy.Legacy.ZVA24']
                     Interface:
@@ -514,6 +522,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.pna_task_views:IPNAPortLabel',
                                  'views.pna_task_views:IPNAPortValue']
                         instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
+                                       'exopy_hqc_legacy.Legacy.AgilentPNA_laptop'
                                        'exopy_hqc_legacy.Legacy.ZNB20',
                                        'exopy_hqc_legacy.Legacy.ZVA24']
                     Interface:
@@ -583,18 +592,21 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'pna_tasks:PNASinglePointMeasureTask'
                     view = 'views.pna_task_views:PNASinglePointView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
+                                   'exopy_hqc_legacy.Legacy.AgilentPNA_laptop',
                                    'exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24']
                 Task:
                     task = 'pna_tasks:PNASweepTask'
                     view = 'views.pna_task_views:PNASweepMeasView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
+                                   'exopy_hqc_legacy.Legacy.AgilentPNA_laptop',
                                    'exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24']
                 Task:
                     task = 'pna_tasks:PNAGetTraces'
                     view = 'views.pna_task_views:PNAGetTraceView'
                     instruments = ['exopy_hqc_legacy.Legacy.AgilentPNA',
+                                   'exopy_hqc_legacy.Legacy.AgilentPNA_laptop',
                                    'exopy_hqc_legacy.Legacy.ZNB20',
                                    'exopy_hqc_legacy.Legacy.ZVA24']
                 Task:
