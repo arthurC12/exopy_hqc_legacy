@@ -64,6 +64,7 @@ class Agilent34410A(VisaInstrument):
         else:
             raise InstrIOError('DC voltage measure failed')
 
+
     @secure_communication()
     def read_voltage_ac(self, mes_range='DEF', mes_resolution='DEF'):
         """Return the AC voltage measured by the instrument

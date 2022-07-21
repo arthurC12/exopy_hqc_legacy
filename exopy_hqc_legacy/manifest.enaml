@@ -328,7 +328,20 @@ enamldef HqcLegacyManifest(PluginManifest):
                         kind = 'DC source'
                         connections = {'VisaRS232': {'resource_class': 'INSTR'}
                                       }
-
+                    Driver:
+                        driver = 'qdac2:QDac2'
+                        model = 'QDacII'
+                        kind = 'DC source'
+                        connections = {'VisaRS232': {'resource_class':'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'SOCKET'}
+                                       }
+                    Driver:
+                        driver = 'qdac2:QDac2SingleChannel'
+                        model = 'QDac2channel9'
+                        kind = 'DC source'
+                        connections = {'VisaRS232': {'resource_class':'INSTR'},
+                                       'VisaTCPIP': {'resource_class': 'SOCKET'}
+                                       }
                 Drivers:
                     manufacturer = 'Rohde and Schwarz'
                     Driver:
@@ -463,13 +476,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                                    'exopy_hqc_legacy.Legacy.Yokogawa7651',
                                    'exopy_hqc_legacy.Legacy.YokogawaGS200',
                                    'exopy_hqc_legacy.Legacy.Adwin3055',
-                                   'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                                   'exopy_hqc_legacy.Legacy.QDacSingleChannel',
+                                   'exopy_hqc_legacy.Legacy.QDac2SingleChannel']
                     metadata = {'loopable': True}
 
                 Task:
                     task = 'meas_dc_tasks:MeasDCCurrentTask'
                     view = 'views.meas_dc_views:MeasDCCurrView'
                     instruments = ['exopy_hqc_legacy.Legacy.QDacSingleChannel',
+                                   'exopy_hqc_legacy.Legacy.QDac2SingleChannel',
                                    'exopy_hqc_legacy.Legacy.Adwin3055']
                     metadata = {'loopable': True}
                 Task:
@@ -625,6 +640,7 @@ enamldef HqcLegacyManifest(PluginManifest):
                     instruments = ['exopy_hqc_legacy.Legacy.YokogawaGS200',
                                    'exopy_hqc_legacy.Legacy.Yokogawa7651',
                                    'exopy_hqc_legacy.Legacy.QDacSingleChannel',
+                                   'exopy_hqc_legacy.Legacy.QDac2SingleChannel',
                                    'exopy_hqc_legacy.Legacy.Dummy'
                                    
                                    ]
@@ -649,13 +665,15 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'MultiChannelVoltageSourceILabelQdac',
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceIChannelQdac']
-                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac',
+                                       'exopy_hqc_legacy.Legacy.QDac2']
 
                 Task:
                     task = 'dc_tasks:GetDCVoltageTask'
                     view = 'views.dc_views:GetDcVoltageView'
                     instruments = ['exopy_hqc_legacy.Legacy.Yokogawa7651',
-                                   'exopy_hqc_legacy.Legacy.QDacSingleChannel']
+                                   'exopy_hqc_legacy.Legacy.QDacSingleChannel',
+                                   'exopy_hqc_legacy.Legacy.QDac2SingleChannel']
                     metadata = {'loopable': True}
                 Task:
                     task = 'dc_tasks:SetDCCurrentTask'
@@ -692,7 +710,8 @@ enamldef HqcLegacyManifest(PluginManifest):
                         interface = 'dc_tasks:MultiChannelGetVoltageInterface'
                         views = ['views.mc_task_views:MultiChannelLabel',
                                  'views.mc_task_views:MultiChannelValue']
-                        instruments = ['exopy_hqc_legacy.Legacy.QDac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac',
+                                       'exopy_hqc_legacy.Legacy.QDac2']
                     Interface:
                         interface = 'adwin_tasks:AdwinGetVoltageInterface'
                         views = ['views.adwin_views:AdwinInChannelLabel',
