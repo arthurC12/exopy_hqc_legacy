@@ -29,7 +29,9 @@ class QDac2Channel(BaseInstrument):
 
     secure_com_except = (InvalidSession, InstrIOError, VisaIOError)
 
-    def __init__(self, QDac2, channel_num, caching_allowed=True, caching_permissions={}):
+    def __init__(
+        self, QDac2, channel_num, caching_allowed=True, caching_permissions={}
+    ):
         super().__init__(None, caching_allowed, caching_permissions)
         self._QDac2 = QDac2
         self._channel = channel_num
@@ -50,7 +52,7 @@ class QDac2Channel(BaseInstrument):
         if value:
             return float(value)
         else:
-            raise InstrIOError('Instrument did not return the voltage')
+            raise InstrIOError("Instrument did not return the voltage")
 
     @voltage.setter
     @secure_communication()
@@ -60,100 +62,61 @@ class QDac2Channel(BaseInstrument):
         # setvoltage = "SOURce{}:VOLT {}".format(self._channel, value)
         self._QDac2.write("SOURce{}:VOLT {}".format(self._channel, value))
         result = float(self._QDac2.query("SOURce{}:VOLT?".format(self._channel)))
-        if abs(result-round(value,9))>5e-6:
+        if abs(result - round(value, 9)) > 5e-6:
             raise InstrIOError("Instrument did not set correctly the voltage")
 
     @secure_communication()
     def read_voltage_dc(self):
         return self.voltage
 
-    # @secure_communication()
-    # def read_current_dc(self):
-    #     """output value getter method
-    #     """
-    #     _query = "get {}".format(self._channel)
-    #     response = QDac.check_for_error(self._QDac2.query(_query))
-    #     if self.verbose:
-    #         # response = 'Channel <channel> current: <current> uA\n' (verbose on)
-    #         value = float(response.split(":")[1].strip().split(" ")[0])
-    #     else:
-    #         # response = ‘<current>\n’ (
-    #         value = float(response.strip())
-    #     return value * 1e-6
-
-    @instrument_property
-    def current(self):
-        return self.read_current_dc()
-
     @instrument_property
     @secure_communication()
-    def voltage_range(self):
-        """
-        Get voltage range for the specific channel. 0 = +/- 10V, 1 = +/- 1.1 V
-        """
-        _query = "vol {}".format(self._channel)
-        response = QDac.check_for_error(self._QDac2.query(_query))
-        if self.verbose:
-            # Response = 'Voltage range on Channel <channel> set to: <range>\n’, <range> = {'x1', 'x0.1'}
-            value = int(response.split("x")[1][0])
-            if value == 1:
-                return 10
-            else:
-                return 1.1
-        else:
-            value = int(response)
-            if response == 0:
-                return 10
-            else:
-                return 1.1
+    def output_filter(self):
+        filter_state = self._QDac2.query("sour{}:filt?".format(self._channel))
+        return filter_state
 
-    # @voltage_range.setter
-    # @secure_communication()
-    # def voltage_range(self, value):
-    #     """
-    #     Set voltage range for the specific channel, possible values = {10 V = 0, 1.1 V = 1}
-    #     """
-    #     if value == 10:
-    #         value = 0
-    #     else:
-    #         value = 1
-    #     _query = "vol {} {}".format(self._channel, value)
-    #     QDac.check_for_error(self._QDac2.query(_query))
+    @output_filter.setter
+    @secure_communication()
+    def output_filter(self, state):
+
+        if state.lower() not in ["dc", "medium", "high"]:
+            raise InstrIOError(
+                'the output filter should be either "DC"(10Hz), "MED" (10kHz) or "HIGH" (230MHz)'
+            )
+
+        self._QDac2.write("sour{}:filt {}".format(self._channel,state))
+        output = self._QDac2.query("sour{}:filt?".format(self._channel))
+        if state.lower() == output.lower():
+            print("Channel {} output filter set to {}".format(self._channel, state))
+            return state
+        else:
+            raise InstrIOError("the output filter has not been set correctly")
 
     @instrument_property
     @secure_communication()
-    def current_range(self):
-        """
-        Get voltage range for the specific channel. 0 => 1 uA, 1 => 100 mA
-        """
-        _query = "cur {}".format(self._channel)
-        response = QDac.check_for_error(self._QDac2.query(_query))
-        if self.verbose:
-            # response = 'Current range on Channel <channel> set to: <range>\n’, <range> = 'Low', 'High'
-            value = response.split(":")[1].strip()
-            if value == "Low":
-                return 1e-6
-            else:
-                return 1e-4
-        else:
-            # response = '0', '1'
-            if response == "0":
-                return 1e-6
-            else:
-                return 1e-4
+    def output_range(self):
+        range = self._QDac2.query("sour{}:rang?".format(self._channel))
+        return range
 
-    @current_range.setter
+    @output_filter.setter
     @secure_communication()
-    def current_range(self, value):
-        """
-        Set voltage range for the specific channel, possible values = {1 uA => 0, 100 uA => 1}
-        """
-        if value == 1:
-            value = 0
+    def output_range(self, state):
+
+        if state.lower() not in ["low", "high"]:
+            raise InstrIOError(
+                'the range should be either "LOW"(+-2V) or "HIGH" (+-10V)'
+            )
+
+        self._QDac2.write("sour{}:rang {}".format(self._channel,state))
+        output = self._QDac2.query("sour{}:rang?".format(self._channel))
+        if state.lower() == output.lower():
+            print("Channel {} range set to {}".format(self._channel, state))
+            return state
         else:
-            value = 1
-        _query = "cur {} {}".format(self._channel, value)
-        QDac.check_for_error(self._QDac2.query(_query))
+            raise InstrIOError("the output range has not been set correctly")
+
+
+
 
 
 class QDac2(VisaInstrument):
@@ -188,21 +151,24 @@ class QDac2(VisaInstrument):
         """Open the connection to the instr using the `connection_str`
         """
         # super(QDac2, self).open_connection(**para)
-        rm = pyvisa.ResourceManager('@py')
+        rm = pyvisa.ResourceManager("@py")
         try:
-            self._driver = rm.open_resource(self.connection_str,
-                                            open_timeout = 1000, **para)
+            self._driver = rm.open_resource(
+                self.connection_str, open_timeout=1000, **para
+            )
         except errors.VisaIOError as er:
             self._driver = None
             raise InstrIOError(str(er))
 
         self.write_termination = "\n"
         self.read_termination = "\n"
-        # temporary: sets the DC outputs range to LOW in order to reduce noise floor
-        self.write("SOURce:RANGe LOW, (@1:24)")
 
-        #temporary: sets the cutoff frequency of the output low pass filter to MEDium (10kHz)
-        self.write("SOUR:FILT MED, (@1:24)")
+        # These prevent to perform tasks, another task created in orde to do it manually
+        # temporary: sets the DC outputs range to LOW in order to reduce noise floor
+        # self.write("SOURce:RANGe LOW, (@1:24)")
+        #
+        # temporary: sets the cutoff frequency of the output low pass filter to MEDium (10kHz)
+        # self.write("SOUR:FILT MED, (@1:24)")
 
         # for channel in self.defined_channels:
         #     msg = self.query("SOURce:RANGe?")
@@ -235,62 +201,39 @@ class QDac2(VisaInstrument):
             self.channels[num] = channel
             return self.channels[num]
 
-    @instrument_property
-    def serial_number(self):
-        _query = b"sernum"
-        response = QDac.check_for_error(_query)
-        return response
-
-    # def query(self, message, *args, **kwargs):
-    #     """
-    #     For debug purposes only; to be removed
-    #     """
-    #     self.port.write("{}\n".format(message).encode())
-    #     return self.port.readline()
-    #     #print(message)
-    #     #return super(QDac, self).query(message, *args, **kwargs)
-
-    @staticmethod
-    def check_for_error(msg):
-        """
-        Error handling
-        """
-        if msg[:5] == b"Error":
-            raise InstrIOError(cleandoc("""QDAc communication error"""))
-        else:
-            try:
-                return msg.decode("utf-8")
-            except AttributeError:
-                raise InstrIOError(
-                    cleandoc("Error response from QDAC: <{}>".format(msg))
-                )
-
 
 class QDac2SingleChannel(VisaInstrument):
     """
        """
 
-    caching_permissions = {'defined_channels': True}
+    caching_permissions = {"defined_channels": True}
     secure_com_except = (InvalidSession, InstrIOError, VisaIOError)
 
-    def __init__(self, connection_info, caching_allowed=True,
-                 caching_permissions={}, auto_open=True):
+    def __init__(
+        self,
+        connection_info,
+        caching_allowed=True,
+        caching_permissions={},
+        auto_open=True,
+    ):
         self._channel = 9
         # self.verbose = True
-        self.resource_name = connection_info['resource_name']
+        self.resource_name = connection_info["resource_name"]
         # rm = pyvisa.ResourceManager('@py')
         # self.port_name = rm.list_resources_info()[self.resource_name].alias
-        super(QDac2SingleChannel, self).__init__(connection_info, caching_allowed,
-                                                caching_permissions, auto_open)
+        super(QDac2SingleChannel, self).__init__(
+            connection_info, caching_allowed, caching_permissions, auto_open
+        )
 
     def open_connection(self, **para):
         """Open the connection to the instr using the `connection_str`
         """
         # super(QDac2, self).open_connection(**para)
-        rm = pyvisa.ResourceManager('@py')
+        rm = pyvisa.ResourceManager("@py")
         try:
-            self._driver = rm.open_resource(self.connection_str,
-                                            open_timeout = 1000, **para)
+            self._driver = rm.open_resource(
+                self.connection_str, open_timeout=1000, **para
+            )
         except errors.VisaIOError as er:
             self._driver = None
             raise InstrIOError(str(er))
@@ -301,7 +244,7 @@ class QDac2SingleChannel(VisaInstrument):
         # temporary: sets the DC outputs range to LOW in order to reduce noise floor
         # self.write("SOURce:RANGe LOW, (@1:24)")
 
-        #temporary: sets the cutoff frequency of the output low pass filter to MEDium (10kHz)
+        # temporary: sets the cutoff frequency of the output low pass filter to MEDium (10kHz)
         # self.write("SOUR:FILT MED, (@1:24)")
 
     # def open_connection(self, **para):
@@ -324,8 +267,7 @@ class QDac2SingleChannel(VisaInstrument):
         if value:
             return float(value)
         else:
-            raise InstrIOError('Instrument did not return the voltage')
-
+            raise InstrIOError("Instrument did not return the voltage")
 
     @secure_communication()
     def read_voltage_dc(self):
@@ -339,8 +281,8 @@ class QDac2SingleChannel(VisaInstrument):
         """
         self.write("SOURce9:VOLT {}".format(value))
         result = float(self.query("SOURce9:VOLT?"))
-        if abs(result-round(value,9))>5e-6:
-            raise InstrIOError('Instrument did not set correctly the voltage')
+        if abs(result - round(value, 9)) > 5e-6:
+            raise InstrIOError("Instrument did not set correctly the voltage")
 
     @instrument_property
     @secure_communication()
@@ -352,12 +294,14 @@ class QDac2SingleChannel(VisaInstrument):
     @secure_communication()
     def output_filter(self, state):
 
-        if state.lower() not in ['dc', 'med', 'high']:
-            raise InstrIOError('the output filter should be either "DC"(10Hz), "MED" (10kHz) or "HIGH" (230MHz)')
+        if state.lower() not in ["dc", "medium", "high"]:
+            raise InstrIOError(
+                'the output filter should be either "DC"(10Hz), "MED" (10kHz) or "HIGH" (230MHz)'
+            )
 
         self.write("sour9:filt {}".format(state))
         output = self.query("sour9:filt?")
-        if state.lower()==output.lower():
+        if state.lower() == output.lower():
             return state
         else:
             raise InstrIOError("the output filter has not been set correctly")
@@ -370,11 +314,12 @@ class QDac2SingleChannel(VisaInstrument):
 
     @output_filter.setter
     @secure_communication()
-    def output_filter(self, state):
+    def output_range(self, state):
 
-        if state.lower() not in ['low', 'high']:
+        if state.lower() not in ["low", "high"]:
             raise InstrIOError(
-                'the range should be either "LOW"(+-2V) or "HIGH" (+-10V)')
+                'the range should be either "LOW"(+-2V) or "HIGH" (+-10V)'
+            )
 
         self.write("sour9:rang {}".format(state))
         output = self.query("sour9:rang?")
@@ -382,106 +327,3 @@ class QDac2SingleChannel(VisaInstrument):
             return state
         else:
             raise InstrIOError("the output range has not been set correctly")
-
-
-
-    @secure_communication()
-    def read_current_dc(self):
-        """output value getter method
-        """
-        _query = "get {}\n".format(self._channel)
-        response = self.check_for_error(self.query(_query))
-        if self.verbose:
-            # response = 'Channel <channel> current: <current> uA\n' (verbose on)
-            value = float(response.split(":", 1)[1][:-2])
-        else:
-            # response = ‘<current>\n’ (
-            value = float(response.strip())
-        return value * 1E-6
-
-    @instrument_property
-    def current(self):
-        return self.read_current_dc()
-
-    @instrument_property
-    @secure_communication()
-    def voltage_range(self):
-        """
-        Get voltage range for the specific channel. 0 = +/- 10V, 1 = +/- 1.1 V
-        """
-        _query = "vol {}\n".format(self._channel)
-        response = self.check_for_error(self.query(_query))
-        if self.verbose:
-            # Response = 'Voltage range on Channel <channel> set to: <range>\n’, <range> = {'x1', 'x0.1'}
-            value = int(response.split('x')[1][0])
-            if value == 1:
-                return 10
-            else:
-                return 1.1
-        else:
-            value = int(response)
-            if response == 0:
-                return 10
-            else:
-                return 1.1
-
-    @voltage_range.setter
-    @secure_communication()
-    def voltage_range(self, value):
-        """
-        Set voltage range for the specific channel, possible values = {10 V = 0, 1.1 V = 1}
-        """
-        if value == 10:
-            value = 0
-        else:
-            value = 1
-        _query = "vol {} {}\n".format(self._channel, value)
-        self.check_for_error(self.query(_query))
-
-    @instrument_property
-    @secure_communication()
-    def current_range(self):
-        """
-        Get voltage range for the specific channel. 0 => 1 uA, 1 => 100 mA
-        """
-        _query = "cur {}\n".format(self._channel)
-        response = self.check_for_error(self.query(_query))
-        if self.verbose:
-            # response = 'Current range on Channel <channel> set to: <range>\n’, <range> = 'Low', 'High'
-            value = response.split(':')[1].strip()
-            if value == "Low":
-                return 1E-6
-            else:
-                return 1E-4
-        else:
-            # response = '0', '1'
-            if response == '0':
-                return 1E-6
-            else:
-                return 1E-4
-
-    @current_range.setter
-    @secure_communication()
-    def current_range(self, value):
-        """
-        Set voltage range for the specific channel, possible values = {1 uA => 0, 100 uA => 1}
-        """
-        if value == 1:
-            value = 0
-        else:
-            value = 1
-        _query = "cur {} {}\n".format(self._channel, value)
-        self.check_for_error(self.query(_query))
-
-    def check_for_error(self, msg):
-        """
-        Error handling
-        """
-        if msg[:5] == b"Error":
-            raise InstrIOError(cleandoc('''QDAc communication error'''))
-        else:
-            try:
-                return msg.decode("utf-8")
-            except AttributeError:
-                raise InstrIOError(cleandoc('''QDAc communication error'''))
-

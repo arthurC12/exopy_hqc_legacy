@@ -766,3 +766,28 @@ enamldef HqcLegacyManifest(PluginManifest):
                     task = 'adwin_tasks:AdwinVoltageTask'
                     view = 'views.adwin_views:SetVoltageView'
                     instruments = ['exopy_hqc_legacy.Legacy.Adwin']
+                Task:
+                    task = 'qdac2_settings:SetOutputFilterTask'
+                    view = 'views.qdac2_settings_views:SetOutputFilterView'
+                    instruments = ['exopy_hqc_legacy.Legacy.QDac2SingleChannel']
+                    Interface:
+                        interface = ('qdac2_settings:'
+                                     'MultiChannelQDacSettingsOutputFilter')
+                        views = ['views.dc_views:'
+                                 'MultiChannelVoltageSourceILabelQdac',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIChannelQdac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac2']
+
+                Task:
+                    task = 'qdac2_settings:SetOutputRangeTask'
+                    view = 'views.qdac2_settings_views:SetOutputRangeView'
+                    instruments = ['exopy_hqc_legacy.Legacy.QDac2SingleChannel']
+                    Interface:
+                        interface = ('qdac2_settings:'
+                                     'MultiChannelQDacSettingsOutputRange')
+                        views = ['views.dc_views:'
+                                 'MultiChannelVoltageSourceILabelQdac',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIChannelQdac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac2']
