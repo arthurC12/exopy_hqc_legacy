@@ -84,7 +84,7 @@ class QDac2Channel(BaseInstrument):
                 'the output filter should be either "DC"(10Hz), "MED" (10kHz) or "HIGH" (230MHz)'
             )
 
-        self._QDac2.write("sour{}:filt {}".format(self._channel,state))
+        self._QDac2.write("sour{}:filt {}".format(self._channel, state))
         output = self._QDac2.query("sour{}:filt?".format(self._channel))
         if state.lower() == output.lower():
             print("Channel {} output filter set to {}".format(self._channel, state))
@@ -107,7 +107,7 @@ class QDac2Channel(BaseInstrument):
                 'the range should be either "LOW"(+-2V) or "HIGH" (+-10V)'
             )
 
-        self._QDac2.write("sour{}:rang {}".format(self._channel,state))
+        self._QDac2.write("sour{}:rang {}".format(self._channel, state))
         output = self._QDac2.query("sour{}:rang?".format(self._channel))
         if state.lower() == output.lower():
             print("Channel {} range set to {}".format(self._channel, state))
@@ -115,8 +115,72 @@ class QDac2Channel(BaseInstrument):
         else:
             raise InstrIOError("the output range has not been set correctly")
 
+    @instrument_property
+    @secure_communication()
+    def channel_mode(self):
+        mode = self._QDac2.query("sour{}:volt:mode?")
+        return mode
 
+    @channel_mode.setter
+    @secure_communication()
+    def channel_mode(self, value: str):
+        """So far, only implemented for LIST and FIXed modes
+        """
+        if value.lower() not in ["list", "fixed"]:
+            raise InstrIOError("The mode should either be FIXED or LIST")
+        self._QDac2.write("sour{}:volt:mode {}".format(self._channel, value))
+        output = self._QDac2.query("sour{}:volt:mode?".format(self._channel))
+        if output.lower() == value.lower():
+            print("Channel {} state set to {}".format(self._channel, value))
+            return value
+        else:
+            raise InstrIOError(
+                "Channel {} mode has not been set correctly ({})".format(
+                    self._channel, value
+                )
+            )
 
+    @instrument_property
+    @secure_communication()
+    def list_values(self):
+        msg = "sour{}:list:volt?"
+        values = [float(val) for val in self._QDac2.query(msg).split(",")]
+        return values
+
+    @list_values.setter
+    @secure_communication()
+    def list_values(self, values: list):
+        """
+        The values have to be transferred as a list.
+        To be checked:
+            -number of digits in each element of the list?
+            -is list the best way? maybe add an option for numpy arrays
+            -check with interfacing if it is doable without str as inputs
+        """
+        axis = ",".join([str(val) for val in values])
+        msg = "sour{}:list:volt ".format(self._channel) + axis
+        self._QDac2.write(msg)
+        out_str = self._QDac2.query("sour{}:list:volt?")
+        output = [float(val) for val in out_str.split(",")]
+        if output == values:
+            print("Voltages sent correctly to channel {}".format(self._channel))
+            return values
+        else:
+            raise InstrIOError(
+                "Voltages not sent correctly to channel {}, it returned " + out_str
+            )
+
+    @instrument_property
+    @secure_communication()
+    def list_parameter_count(self):
+        return self._QDac2.query("sour{}:dc:list:count?")
+
+    @list_parameter_count.setter
+    @instrument_property()
+    def list_parameter_count(self):
+        """
+        to be continued
+        """
 
 
 class QDac2(VisaInstrument):
@@ -327,3 +391,9 @@ class QDac2SingleChannel(VisaInstrument):
             return state
         else:
             raise InstrIOError("the output range has not been set correctly")
+
+    @instrument_property
+    @secure_communication()
+    def channel_mode(self):
+        mode = self.query("sour9:volt:mode?")
+        return mode
