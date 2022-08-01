@@ -124,7 +124,8 @@ class QDac2Channel(BaseInstrument):
     @channel_mode.setter
     @secure_communication()
     def channel_mode(self, value: str):
-        """So far, only implemented for LIST and FIXed modes
+        """
+        So far, only implemented for LIST and FIXed modes
         """
         if value.lower() not in ["list", "fixed"]:
             raise InstrIOError("The mode should either be FIXED or LIST")
@@ -177,10 +178,79 @@ class QDac2Channel(BaseInstrument):
 
     @list_parameter_count.setter
     @instrument_property()
-    def list_parameter_count(self):
+    def list_parameter_count(self, val):
         """
         to be continued
+        param: val: int or "INF", number of repetitions of the list when triggered.
         """
+        if (val in ["INF", "inf"]) or (type(val) == int):
+            msg = "sour{}:dc:list:count {}".format(self._channel, val)
+            self._QDac2.write(msg)
+        else:
+            raise InstrIOError("'COUNT' can only be an INT or 'INF'")
+
+        output = self._QDac2.query("sour{}:dc:list:count?")
+        if output.lower() == str(val).lower():
+            print("'COUNT' set to {} for channel {}".format(output, self._channel))
+        else:
+            raise InstrIOError(
+                "'COUNT' not set correctly for channel {} ({} returned)".format(
+                    self._channel, output
+                )
+            )
+
+    @instrument_property
+    @secure_communication()
+    def list_trigger_mode(self):
+        return self._QDac2.query("sour{}:list:tmod?".format(self._channel))
+
+    @list_trigger_mode.setter
+    @secure_communication()
+    def list_trigger_mode(self, value: str):
+        if value.lower() not in ["auto", "step"]:
+            raise InstrIOError(
+                "Specified value should be 'AUTO' or 'STEP', not {}".format(value)
+            )
+        else:
+            self._QDac2.write("sour{}:list:tmod {}".format(self._channel, value))
+            output = self._QDac2.query("sour{}:list:tmod?".format(self._channel))
+            if output.lower() == value.lower():
+                print("Channel {} list 'TMOD' set to {}".format(self._channel, value))
+            else:
+                raise InstrIOError(
+                    "Channel {} 'TMOD' not set correctly ({} returned)".format(
+                        self._channel, output
+                    )
+                )
+
+    @instrument_property
+    @secure_communication()
+    def trigger_source(self):
+        return self._QDac2.query("sour{}:dc:trig:sour?")
+
+    @trigger_source.setter
+    @instrument_property()
+    def trigger_source(self, value):
+        """
+        Implemented so far only for ext1,2,3 and IMM (internal triggering)
+        """
+        if value.lower() not in ["imm", "ext1", "ext2", "ext3"]:
+            raise InstrIOError("{} is not a valid trigger source".format(value))
+        else:
+            self._QDac2.write("sour{}:dc:trig:sour {}".format(self._channel, value))
+            output = self._QDac2.query("sour{}:dc:trig:sour?")
+            if value.lower() == output.lower():
+                print(
+                    "trigger source of channel {} set to {}".format(
+                        self._channel, value
+                    )
+                )
+            else:
+                raise InstrIOError(
+                    "trigger source not set correctly for channel {}, ({} returned".format(
+                        self._channel, output
+                    )
+                )
 
 
 class QDac2(VisaInstrument):
