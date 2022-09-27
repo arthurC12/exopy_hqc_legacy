@@ -23,6 +23,7 @@ from ..visa_tools import VisaInstrument
 
 import serial
 import pyvisa
+import numpy as np
 
 
 class QDac2Channel(BaseInstrument):
@@ -127,8 +128,8 @@ class QDac2Channel(BaseInstrument):
         """
         So far, only implemented for LIST and FIXed modes
         """
-        if value.lower() not in ["list", "fixed"]:
-            raise InstrIOError("The mode should either be FIXED or LIST")
+        if value.lower() not in ["list", "fix"]:
+            raise InstrIOError("The mode should either be FIX or LIST")
         self._QDac2.write("sour{}:volt:mode {}".format(self._channel, value))
         output = self._QDac2.query("sour{}:volt:mode?".format(self._channel))
         if output.lower() == value.lower():
@@ -144,7 +145,7 @@ class QDac2Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def list_values(self):
-        msg = "sour{}:list:volt?"
+        msg = "sour{}:list:volt?".format(self._channel)
         values = [float(val) for val in self._QDac2.query(msg).split(",")]
         return values
 
@@ -158,12 +159,15 @@ class QDac2Channel(BaseInstrument):
             -is list the best way? maybe add an option for numpy arrays
             -check with interfacing if it is doable without str as inputs
         """
-        axis = ",".join([str(val) for val in values])
+        print(values, values[0])
+        axis = ",".join([str(np.round(val, 6)) for val in values])
         msg = "sour{}:list:volt ".format(self._channel) + axis
+        print(msg)
         self._QDac2.write(msg)
-        out_str = self._QDac2.query("sour{}:list:volt?")
+        out_str = self._QDac2.query("sour{}:list:volt?".format(self._channel))
         output = [float(val) for val in out_str.split(",")]
-        if output == values:
+
+        if np.array(output).all() == np.array(values).all():
             print("Voltages sent correctly to channel {}".format(self._channel))
             return values
         else:
@@ -174,10 +178,10 @@ class QDac2Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def list_parameter_count(self):
-        return self._QDac2.query("sour{}:dc:list:count?")
+        return int(self._QDac2.query("sour{}:dc:list:count?".format(self._channel)))
 
     @list_parameter_count.setter
-    @instrument_property()
+    @secure_communication()
     def list_parameter_count(self, val):
         """
         to be continued
@@ -189,9 +193,10 @@ class QDac2Channel(BaseInstrument):
         else:
             raise InstrIOError("'COUNT' can only be an INT or 'INF'")
 
-        output = self._QDac2.query("sour{}:dc:list:count?")
-        if output.lower() == str(val).lower():
+        output = self._QDac2.query("sour{}:dc:list:count?".format(self._channel))
+        if (output.lower() == str(val).lower()) or int(output) == -1:
             print("'COUNT' set to {} for channel {}".format(output, self._channel))
+            return int(output)
         else:
             raise InstrIOError(
                 "'COUNT' not set correctly for channel {} ({} returned)".format(
@@ -216,6 +221,7 @@ class QDac2Channel(BaseInstrument):
             output = self._QDac2.query("sour{}:list:tmod?".format(self._channel))
             if output.lower() == value.lower():
                 print("Channel {} list 'TMOD' set to {}".format(self._channel, value))
+                return output
             else:
                 raise InstrIOError(
                     "Channel {} 'TMOD' not set correctly ({} returned)".format(
@@ -226,10 +232,10 @@ class QDac2Channel(BaseInstrument):
     @instrument_property
     @secure_communication()
     def trigger_source(self):
-        return self._QDac2.query("sour{}:dc:trig:sour?")
+        return self._QDac2.query("sour{}:dc:trig:sour?".format(self._channel))
 
     @trigger_source.setter
-    @instrument_property()
+    @secure_communication()
     def trigger_source(self, value):
         """
         Implemented so far only for ext1,2,3 and IMM (internal triggering)
@@ -238,13 +244,14 @@ class QDac2Channel(BaseInstrument):
             raise InstrIOError("{} is not a valid trigger source".format(value))
         else:
             self._QDac2.write("sour{}:dc:trig:sour {}".format(self._channel, value))
-            output = self._QDac2.query("sour{}:dc:trig:sour?")
+            output = self._QDac2.query("sour{}:dc:trig:sour?".format(self._channel))
             if value.lower() == output.lower():
                 print(
                     "trigger source of channel {} set to {}".format(
                         self._channel, value
                     )
                 )
+                return value
             else:
                 raise InstrIOError(
                     "trigger source not set correctly for channel {}, ({} returned".format(
@@ -290,7 +297,7 @@ class QDac2(VisaInstrument):
             self._driver = rm.open_resource(
                 self.connection_str, open_timeout=1000, **para
             )
-        except errors.VisaIOError as er:
+        except pyvisa.errors.VisaIOError as er:
             self._driver = None
             raise InstrIOError(str(er))
 
@@ -368,7 +375,7 @@ class QDac2SingleChannel(VisaInstrument):
             self._driver = rm.open_resource(
                 self.connection_str, open_timeout=1000, **para
             )
-        except errors.VisaIOError as er:
+        except pyvisa.errors.VisaIOError as er:
             self._driver = None
             raise InstrIOError(str(er))
 

@@ -791,3 +791,14 @@ enamldef HqcLegacyManifest(PluginManifest):
                                  'views.dc_views:'
                                  'MultiChannelVoltageSourceIChannelQdac']
                         instruments = ['exopy_hqc_legacy.Legacy.QDac2']
+                Task:
+                    task = 'qdac2_settings:SendListAndInit'
+                    view = 'views.qdac2_settings_views:SendListAndInitView'
+                    Interface:
+                        interface = ('qdac2_settings:'
+                                     'MultiChannelQDacSendListAndInit')
+                        views = ['views.dc_views:'
+                                 'MultiChannelVoltageSourceILabelQdac',
+                                 'views.dc_views:'
+                                 'MultiChannelVoltageSourceIChannelQdac']
+                        instruments = ['exopy_hqc_legacy.Legacy.QDac2']

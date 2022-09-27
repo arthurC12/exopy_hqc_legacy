@@ -62,3 +62,32 @@ enamldef SetOutputRangeView(InstrView): view:
         ObjectCombo:
             items << list(['LOW','HIGH'])
             selected := task.desired_range
+
+enamldef SendListAndInitView(InstrView): view:
+    """View for the SetOutputRangeView
+
+    """
+    #: Attribute set by the parent view if the task is embedded inside a
+    #: LoopTask
+    attr in_loop : bool = False
+
+    constraints = [factory(auto_grid_layout)]
+
+
+    Conditional:
+        condition << not in_loop
+        Label:
+            text = 'Output Range'
+        ObjectCombo:
+            items << list(['EXT1','EXT2', 'EXT3','IMM'])
+            selected := task.trigger_source
+
+    Conditional:
+        condition << not in_loop
+        Label:
+            text = 'Voltage list (V)'
+        QtLineCompleter:
+            hug_width = 'ignore'
+            text := task.voltage_list
+            entries_updater << task.list_accessible_database_entries
+            tool_tip = EVALUATER_TOOLTIP

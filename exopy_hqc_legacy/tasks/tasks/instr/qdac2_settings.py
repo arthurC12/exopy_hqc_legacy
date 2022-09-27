@@ -14,7 +14,9 @@ import time
 import numbers
 import numpy as np
 from atom.api import Float, Value, Str, Int, set_default, Enum, Tuple, List
+from collections import Iterable
 
+# from ..validators import Feval
 from exopy.tasks.api import (
     InstrumentTask,
     TaskInterface,
@@ -218,10 +220,15 @@ class SendListAndInit(InterfaceableTaskMixin, InstrumentTask):
         pref=True,
         # feval=validators.SkipLoop()
     )
-    voltage_list = List()
-    database_entries = set_default({"trigger_source": "EXT1"})
+    voltage_list = Str("np.linspace(-1,1,11)").tag(
+        pref=True, feval=validators.Feval(types=Iterable)
+    )
 
-    def i_perform(self, filter_state=None):
+    database_entries = set_default(
+        {"trigger_source": "EXT1", "voltage_list": np.array([0])}
+    )
+    # database_entries = set_default({'sweep_data': np.array([0])})
+    def i_perform(self, trigger_source=None, voltage_list=None):
         """
         Default interface for single channel
         """
@@ -240,9 +247,19 @@ class SendListAndInit(InterfaceableTaskMixin, InstrumentTask):
         elif trigger_source == "IMM":
             self.driver.trigger_source = "IMM"
             self.write_in_database("trigger_source", "IMM")
+        # TODO: implement a smooth_set for the 1st value
+        if voltage_list is None:
+            voltage_list = self.format_and_eval_string(self.voltage_list)
+            self.driver.channel_mode = "FIX"
+            self.driver.voltage = np.array(voltage_list)[0]
+            self.driver.list_values = np.array(voltage_list)
+            self.driver.list_parameter_count = "INF"
+            self.driver.list_trigger_mode = "STEP"
+            # self.driver.voltage = voltage_list[0]
+            self.write_in_database("voltage_list", np.array(voltage_list))
 
 
-class MultiChannelQDacSettingsOutputFilter(TaskInterface):
+class MultiChannelQDacSendListAndInit(TaskInterface):
     """Interface for multiple outputs sources.
 
     """
@@ -253,7 +270,13 @@ class MultiChannelQDacSettingsOutputFilter(TaskInterface):
     #: Reference to the driver for the channel.
     channel_driver = Value()
 
-    def perform(self, value=None):
+    def perform(
+        self,
+        trigger_source=None,
+        list_values=None,
+        trigger_mode=None,
+        parameter_count=None,
+    ):
         """Set the specified voltage.
 
         """
@@ -264,10 +287,25 @@ class MultiChannelQDacSettingsOutputFilter(TaskInterface):
         task.driver.owner = task.name
         self.channel_driver.owner = task.name
 
-        if value is None:
-            value = task.filter_state
-        self.channel_driver.output_filter = value
-        task.write_in_database("filter_state", value)
+        if trigger_source is None:
+            self.channel_driver.trigger_source = task.trigger_source
+            task.write_in_database("trigger_source", task.trigger_source)
+
+        if list_values is None:
+            list_values = task.format_and_eval_string(task.voltage_list)
+            self.channel_driver.list_values = task.format_and_eval_string(
+                task.voltage_list
+            )
+            task.write_in_database("voltage_list", list_values)
+            self.channel_driver.channel_mode = "FIX"
+            self.channel_driver.voltage = np.array(list_values)[0]
+
+        if trigger_mode is None:
+            self.channel_driver.list_trigger_mode = "STEP"
+
+        if parameter_count is None:
+            self.channel_driver.list_parameter_count = "INF"
+            self.channel_driver.channel_mode = "LIST"
 
     def check(self, *args, **kwargs):
         if kwargs.get("test_instr"):
