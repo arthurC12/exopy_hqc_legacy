@@ -91,3 +91,23 @@ enamldef SendListAndInitView(InstrView): view:
             text := task.voltage_list
             entries_updater << task.list_accessible_database_entries
             tool_tip = EVALUATER_TOOLTIP
+
+
+enamldef SetOutputModeView(InstrView): view:
+    """View for the SetOutputModeTask
+
+    """
+    #: Attribute set by the parent view if the task is embedded inside a
+    #: LoopTask
+    attr in_loop : bool = False
+
+    constraints = [factory(auto_grid_layout)]
+
+
+    Conditional:
+        condition << not in_loop
+        Label:
+            text = 'Output Mode'
+        ObjectCombo:
+            items << list(['FIX','LIST'])
+            selected := task.desired_range

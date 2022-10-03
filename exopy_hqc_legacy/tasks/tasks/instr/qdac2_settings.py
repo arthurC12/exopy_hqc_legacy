@@ -325,3 +325,80 @@ class MultiChannelQDacSendListAndInit(TaskInterface):
 
         else:
             return True, {}
+
+
+class SetOutputModeTask(InterfaceableTaskMixin, InstrumentTask):
+    """
+    Sets the output range of the QDACII
+    """
+
+    # desired state of the filter
+    # filter_state = Enum('DC', 'MID', 'HIGH').tag(oref=True)
+    desired_mode = Str("FIX").tag(
+        pref=True,
+        # feval=validators.SkipLoop()
+    )
+
+    database_entries = set_default({"mode": "FIX"})
+
+    def i_perform(self, desired_mode=None):
+        """
+        Default interface for single channel
+        """
+        # print
+        if desired_mode is None:
+            desired_mode = self.desired_mode
+            # print(filter_state)
+        if desired_mode == "FIX":
+            self.driver.channel_mode = "FIX"
+            self.write_in_database("mode", "FIX")
+        elif desired_mode == "LIST":
+            self.driver.channel_mode = "LIST"
+            self.write_in_database("mode", "LIST")
+
+
+class MultiChannelQDacSettingsOutputMode(TaskInterface):
+    """Interface for multiple outputs sources.
+
+    """
+
+    #: Id of the channel to use.
+    # channel = Tuple(default=(1, 1)).tag(pref=True)
+    channel = Int(1).tag(pref=True)
+    #: Reference to the driver for the channel.
+    channel_driver = Value()
+
+    def perform(self, value=None):
+        """Set the specified voltage.
+
+        """
+        task = self.task
+        if not self.channel_driver:
+            self.channel_driver = task.driver.get_channel(self.channel)
+
+        task.driver.owner = task.name
+        self.channel_driver.owner = task.name
+
+        if value is None:
+            value = task.desired_mode
+        self.channel_driver.output_range = value
+        task.write_in_database("mode", value)
+
+    def check(self, *args, **kwargs):
+        if kwargs.get("test_instr"):
+            task = self.task
+            traceback = {}
+            with task.test_driver() as d:
+                if d is None:
+                    return True, {}
+                if self.channel not in d.defined_channels:
+                    key = task.get_error_path() + "_interface"
+                    traceback[key] = "Missing channel {}".format(self.channel)
+
+            if traceback:
+                return False, traceback
+            else:
+                return True, traceback
+
+        else:
+            return True, {}
